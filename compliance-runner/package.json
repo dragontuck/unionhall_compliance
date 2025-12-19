@@ -1,0 +1,15 @@
+{
+  "name": "cmp-compliance-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Run CMP 2To1 / 3To1 compliance processing and export Excel reports.",
+  "main": "cmp-run.js",
+  "type": "commonjs",
+  "scripts": {
+    "run": "node cmp-run.js"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "mssql": "^10.0.0"
+  }
+}
