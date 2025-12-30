@@ -3,12 +3,12 @@
  */
 
 function parseArgs(argv) {
-  const out = { startDate: null, mode: null, outFile: null, dryRun: false, runId: null };
+  const out = { reviewedDate: null, mode: null, outFile: null, dryRun: false, runId: null };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dryRun') out.dryRun = true;
-    else if (a.startsWith('--startDate=')) out.startDate = a.split('=')[1];
-    else if (a === '--startDate') out.startDate = argv[++i];
+    else if (a.startsWith('--reviewedDate=')) out.reviewedDate = a.split('=')[1];
+    else if (a === '--reviewedDate') out.reviewedDate = argv[++i];
     else if (a.startsWith('--mode=')) out.mode = a.split('=')[1];
     else if (a === '--mode') out.mode = argv[++i];
     else if (a.startsWith('--out=')) out.outFile = a.split('=')[1];

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /*
   CMP compliance runner
-  - Inputs: --startDate YYYY-MM-DD, --mode 2To1|3To1
-  - Start Date for the Union Hall is Monday (note current implementation does >= Start Date)
+  - Inputs: --reviewedDate YYYY-MM-DD, --mode 2To1|3To1
+  - Reviewed Date for the Union Hall is typically a wednesday for the prior week (note current implementation does >= Start Date)
   - Creates a run record in dbo.CMP_Runs
-  - Uses dbo.CMP_Reports / dbo.CMP_ReportDetails from the most recent prior run (StartDate < current) as the "starting point".
-  - Processes hires from dbo.CMP_HireData with StartDate >= current startDate.
+  - Uses dbo.CMP_Reports / dbo.CMP_ReportDetails from the most recent prior run (Reviewed < current) as the "starting point".
+  - Processes hires from dbo.CMP_HireData with ReviewedDate >= current reviewedDate.
   - If a contractor has no new hires this run, duplicates the contractor's last prior detail row into the current run
-    (RunId updated; StartDate set to the run StartDate; ReviewedDate set to current time).
+    (RunId updated; ReviewedDate set to the run reviewedDate; ReportDate set to current time).
   - Writes dbo.CMP_ReportDetails + dbo.CMP_Reports rows for the run.
   - Exports an Excel workbook with tabs: detail, report, last 4, recent hire.
 
@@ -16,7 +16,7 @@
     Optional: CMP_DB_PORT, CMP_DB_ENCRYPT (true/false), CMP_DB_TRUST_CERT (true/false)
 
   Usage:
-    node cmp-run.js --startDate 2025-11-16 --mode 2To1
+    node cmp-run.js --reviewedDate 2025-11-16 --mode 2To1
 */
 
 const sql = require('mssql');
@@ -26,7 +26,7 @@ const { addSheetFromRows, generateExcelReport } = require('./src/excel-export');
 
 async function main() {
   const args = parseArgs(process.argv);
-  
+  //  console.log('Args:', args);
   if (args.runId) {
     const cfg = dbConfigFromEnv();
     const pool = await sql.connect(cfg);
@@ -40,11 +40,11 @@ async function main() {
     return;
   }
 
-  if (!args.startDate || !args.mode) {
-    console.error('Usage: node cmp-run.js --startDate YYYY-MM-DD --mode 2To1|3To1 [--out file.xlsx] [--dryRun]\n       node cmp-run.js --runId <id> [--out file.xlsx]');
+  if (!args.reviewedDate || !args.mode) {
+    console.error('Usage: node cmp-run.js --reviewedDate YYYY-MM-DD --mode 2To1|3To1 [--out file.xlsx] [--dryRun]\n       node cmp-run.js --runId <id> [--out file.xlsx]');
     process.exit(2);
   }
-  assertIsoDate(args.startDate);
+  assertIsoDate(args.reviewedDate);
   const modeName = normalizeMode(args.mode);
 
   const cfg = dbConfigFromEnv();
@@ -72,32 +72,32 @@ async function main() {
       const nextRunRes = await tx
         .request()
         .input('modeId', sql.Int, modeId)
-        .input('start', sql.Date, args.startDate)
-        .query('SELECT ISNULL(MAX([Run]), 0) + 1 AS nextRun FROM dbo.CMP_Runs WHERE ModeId = @modeId and StartDate = @start');
+        .input('reviewed', sql.Date, args.reviewedDate)
+        .query('SELECT ISNULL(MAX([Run]), 0) + 1 AS nextRun FROM dbo.CMP_Runs WHERE ModeId = @modeId and ReviewedDate = @reviewed');
       const runNum = nextRunRes.recordset[0].nextRun;
 
       // Insert run.
       const runInsertRes = await tx
         .request()
-        .input('startDate', sql.Date, args.startDate)
+        .input('reviewed', sql.Date, args.reviewedDate)
         .input('modeId', sql.Int, modeId)
         .input('runNum', sql.Int, runNum)
         .query(
-          `INSERT INTO dbo.CMP_Runs (ReportDate, StartDate, ModeId, [Run])
+          `INSERT INTO dbo.CMP_Runs (ReportDate, ReviewedDate, ModeId, [Run])
            OUTPUT INSERTED.id AS runId
-           VALUES (CAST(SYSDATETIME() AS date), @startDate, @modeId, @runNum);`
+           VALUES (CAST(SYSDATETIME() AS date), @reviewed, @modeId, @runNum);`
         );
       const runId = runInsertRes.recordset[0].runId;
 
       // Previous run.
       const prevRunRes = await tx
         .request()
-        .input('startDate', sql.Date, args.startDate)
+        .input('reviewed', sql.Date, args.reviewedDate)
         .query(
           `SELECT TOP 1 id AS runId
            FROM dbo.CMP_Runs
-           WHERE StartDate < @startDate
-           ORDER BY StartDate DESC, id DESC;`
+           WHERE ReviewedDate < @reviewed
+           ORDER BY ReviewedDate DESC, id DESC;`
         );
       const prevRunId = prevRunRes.recordset.length ? prevRunRes.recordset[0].runId : null;
 
@@ -139,17 +139,18 @@ async function main() {
         const hiresRes = await tx
           .request()
           .input('contractorId', sql.Int, contractorId)
-          .input('startDate', sql.Date, args.startDate)
+          .input('reviewed', sql.Date, args.reviewedDate)
           .query(
             `SELECT EmployerId, StartDate, ReviewedDate, MemberName, IANumber, HireType
              FROM dbo.CMP_HireData
              WHERE ContractorID = @contractorId
-               AND StartDate >= @startDate
-             ORDER BY ReviewedDate, StartDate, IANumber;`
+               AND ReviewedDate >= @reviewed
+             ORDER BY StartDate, ReviewedDate, IANumber;`
           );
         const hires = hiresRes.recordset;
 
         if (hires.length) {
+          console.log('hire data:', hires);
           for (const h of hires) {
             applyHire(state, h.HireType, allowedDirect);
             wroteAnyDetail = true;
@@ -162,7 +163,7 @@ async function main() {
                 .input('contractorId', sql.Int, contractorId)
                 .input('contractorName', sql.VarChar(255), contractorName)
                 .input('memberName', sql.VarChar(255), h.MemberName)
-                .input('iaNumber', sql.NVarChar(100), h.IANumber)
+                .input('iaNumber', sql.NVarChar(100), h.IANumber.toString())
                 .input('startDate', sql.Date, h.StartDate)
                 .input('hireType', sql.NVarChar(50), h.HireType)
                 .input('complianceStatus', sql.VarChar(50), codeToStatus(state.compliance))
@@ -210,10 +211,10 @@ async function main() {
 
       await tx.commit();
 
-      const outFile = args.outFile || `CMP_${modeName}_${args.startDate.replace(/-/g, '')}_run${runNum}.xlsx`;
+      const outFile = args.outFile || `CMP_${modeName}_${args.reviewedDate.replace(/-/g, '')}_run${runNum}.xlsx`;
       await generateExcelReport(pool, runId, outFile);
 
-      console.log(`Run created: RunId=${runId} Mode=${modeName} StartDate=${args.startDate} RunNumber=${runNum}`);
+      console.log(`Run created: RunId=${runId} Mode=${modeName} ReviewedDate=${args.reviewedDate} RunNumber=${runNum}`);
       console.log(`Excel exported: ${outFile}`);
     } catch (e) {
       try {
