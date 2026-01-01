@@ -26,12 +26,14 @@ const { addSheetFromRows, generateExcelReport } = require('./src/excel-export');
 
 async function main() {
   const args = parseArgs(process.argv);
-  //  console.log('Args:', args);
+  console.log('Starting compliance run with args:', args);
   if (args.runId) {
+    console.log(`Regenerating report for existing RunId: ${args.runId}`);
     const cfg = dbConfigFromEnv();
     const pool = await sql.connect(cfg);
     try {
       const outFile = args.outFile || `CMP_Report_RunId${args.runId}.xlsx`;
+      console.log(`Generating Excel report: ${outFile}`);
       const { runInfo } = await generateExcelReport(pool, args.runId, outFile);
       console.log(`Excel report regenerated for RunId=${args.runId}: ${outFile}`);
     } finally {
@@ -40,15 +42,19 @@ async function main() {
     return;
   }
 
-  if (!args.reviewedDate || !args.mode) {
+  if (!(args.reviewedDate && args.mode) && !args.runId) {
+    console.log('args', args);
     console.error('Usage: node cmp-run.js --reviewedDate YYYY-MM-DD --mode 2To1|3To1 [--out file.xlsx] [--dryRun]\n       node cmp-run.js --runId <id> [--out file.xlsx]');
     process.exit(2);
   }
   assertIsoDate(args.reviewedDate);
   const modeName = normalizeMode(args.mode);
+  console.log(`Processing new run - Date: ${args.reviewedDate}, Mode: ${modeName}`);
 
   const cfg = dbConfigFromEnv();
+  console.log('Connecting to database...');
   const pool = await sql.connect(cfg);
+  console.log('Database connection established');
 
   try {
     // Resolve mode.
@@ -61,11 +67,13 @@ async function main() {
     }
     const { modeId, modeValue } = modeRes.recordset[0];
     const allowedDirect = Number(modeValue);
+    console.log(`Mode resolved - ID: ${modeId}, Value: ${modeValue}, Allowed Direct: ${allowedDirect}`);
     if (!Number.isFinite(allowedDirect) || allowedDirect < 1) {
       throw new Error(`Invalid mode_value for ${modeName}: ${modeValue}`);
     }
 
     const tx = new sql.Transaction(pool);
+    console.log('Starting database transaction...');
     await tx.begin();
     try {
       // Next run number.
@@ -75,6 +83,7 @@ async function main() {
         .input('reviewed', sql.Date, args.reviewedDate)
         .query('SELECT ISNULL(MAX([Run]), 0) + 1 AS nextRun FROM dbo.CMP_Runs WHERE ModeId = @modeId and ReviewedDate = @reviewed');
       const runNum = nextRunRes.recordset[0].nextRun;
+      console.log(`Next run number: ${runNum}`);
 
       // Insert run.
       const runInsertRes = await tx
@@ -88,6 +97,7 @@ async function main() {
            VALUES (CAST(SYSDATETIME() AS date), @reviewed, @modeId, @runNum);`
         );
       const runId = runInsertRes.recordset[0].runId;
+      console.log(`Created new run with ID: ${runId}`);
 
       // Previous run.
       const prevRunRes = await tx
@@ -100,23 +110,31 @@ async function main() {
            ORDER BY ReviewedDate DESC, id DESC;`
         );
       const prevRunId = prevRunRes.recordset.length ? prevRunRes.recordset[0].runId : null;
+      console.log(`Previous run ID: ${prevRunId || 'None'}`);
 
       // Contractor list for this run.
       let contractorsQuery;
       contractorsQuery = `
           SELECT DISTINCT EmployerId, ContractorId, ContractorName
-          FROM dbo.CMP_HireData;`;
+          FROM dbo.CMP_HireData WHERE ReviewedDate >= @reviewed
+          UNION
+          SELECT DISTINCT EmployerId, ContractorId, ContractorName
+          FROM CMP_Reports WHERE RunId=@prevRunId;`;
 
       const contractorsRes = await tx
         .request()
+        .input('reviewed', sql.Date, args.reviewedDate)
+        .input('prevRunId', sql.BigInt, prevRunId || 0)
         .query(contractorsQuery);
       const contractors = contractorsRes.recordset;
+      console.log(`Found ${contractors.length} contractors to process`);
 
       // Process each contractor.
       for (const c of contractors) {
         const contractorId = c.ContractorId;
         const contractorName = c.ContractorName;
         const employerId = c.EmployerId;
+        console.log(`Processing contractor: ${contractorName} (ID: ${contractorId})`);
 
         // Seed from previous run (report data).
         let seed = null;
@@ -150,8 +168,9 @@ async function main() {
         const hires = hiresRes.recordset;
 
         if (hires.length) {
-          console.log('hire data:', hires);
+          console.log(`Processing ${hires.length} hires for contractor ${contractorName}`);
           for (const h of hires) {
+            console.log(`  Applying hire: ${h.MemberName} (${h.HireType}) - Start: ${h.StartDate}`);
             applyHire(state, h.HireType, allowedDirect);
             wroteAnyDetail = true;
 
@@ -184,6 +203,7 @@ async function main() {
         }
 
         // Insert report summary row.
+        console.log(`Final state for ${contractorName}: Status=${codeToStatus(state.compliance)}, Direct=${state.directCount}, Dispatch=${state.dispatchNeeded}`);
         if (!args.dryRun) {
           await tx
             .request()
@@ -194,11 +214,12 @@ async function main() {
             .input('complianceStatus', sql.VarChar(50), codeToStatus(state.compliance))
             .input('dispatchNeeded', sql.Int, state.dispatchNeeded)
             .input('nextHireDispatch', sql.VarChar(1), state.nextHireDispatch)
+            .input('directCount', sql.Int, state.directCount)
             .query(
               `INSERT INTO dbo.CMP_Reports
-                 (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch)
+                 (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount)
                VALUES
-                 (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch);`
+                 (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch, @directCount);`
             );
         }
       }
@@ -209,23 +230,30 @@ async function main() {
         return;
       }
 
+      console.log('Committing transaction...');
       await tx.commit();
+      console.log('Transaction committed successfully');
 
       const outFile = args.outFile || `CMP_${modeName}_${args.reviewedDate.replace(/-/g, '')}_run${runNum}.xlsx`;
+      console.log(`Generating Excel report: ${outFile}`);
       await generateExcelReport(pool, runId, outFile);
 
       console.log(`Run created: RunId=${runId} Mode=${modeName} ReviewedDate=${args.reviewedDate} RunNumber=${runNum}`);
       console.log(`Excel exported: ${outFile}`);
     } catch (e) {
+      console.error('Error during transaction, rolling back:', e.message);
       try {
         await tx.rollback();
+        console.log('Transaction rolled back');
       } catch (_) {
-        // ignore
+        console.error('Failed to rollback transaction');
       }
       throw e;
     }
   } finally {
+    console.log('Closing database connection...');
     await pool.close();
+    console.log('Database connection closed');
   }
 }
 

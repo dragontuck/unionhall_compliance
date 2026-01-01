@@ -48,7 +48,7 @@ async function generateExcelReport(pool, runId, outFile) {
 
   // const runIds = [...new Set(runHistory.map(r => r.id).filter(Boolean))];
   const detailRows = (await pool.request().input('runId', sql.BigInt, runId)
-    .query(`SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate FROM dbo.CMP_ReportDetails 
+    .query(`SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, convert(nvarchar, ReviewedDate, 25) as ReviewedDate FROM dbo.CMP_ReportDetails 
       WHERE RunId IN (select max(id) as Id from dbo.CMP_Runs group by ReviewedDate having Max(id) <= @runId)
       ORDER BY ContractorName, ReviewedDate, StartDate, IANumber`)).recordset;
   // if (runIds.length) {
@@ -79,11 +79,14 @@ async function generateExcelReport(pool, runId, outFile) {
 		FROM Detail h JOIN Contractors c 
 		ON c.EmployerId = h.EmployerId AND c.ContractorId = h.ContractorID
 	  ) 
-	  SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate, RN as [Order #] FROM Ranked WHERE rn <= 4 ORDER BY ContractorName, ReviewedDate ASC, StartDate ASC
+	  SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, convert(nvarchar, ReviewedDate, 25) as ReviewedDate, RN as [Order #] FROM Ranked WHERE rn <= 4 ORDER BY ContractorName, ReviewedDate ASC, StartDate ASC
     `)).recordset;
 
-  const recentHireRows = (await pool.request().input('reviewed', sql.Date, runInfo.ReviewedDate)
-    .query(`SELECT EmployerId, ContractorID AS ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, ReviewedDate FROM dbo.CMP_HireData WHERE ReviewedDate >= @reviewed ORDER BY StartDate, ReviewedDate, ContractorName`)).recordset;
+  const recentHireRows = (await pool.request()
+    .query(`SELECT EmployerId, ContractorID AS ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, convert(nvarchar, ReviewedDate, 25) as ReviewedDate FROM dbo.CMP_HireData WHERE ReviewedDate >=  (
+        SELECT CAST(MAX(ReviewedDate) AS date) AS MaxReviewedDate
+        FROM dbo.CMP_HireData
+      ) ORDER BY StartDate, ReviewedDate, ContractorName`)).recordset;
 
   await addSheetFromRows(workbook, 'Detail', detailRows);
   await addSheetFromRows(workbook, 'Report', reportRows);
