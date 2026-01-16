@@ -9,6 +9,7 @@ import type {
     ExcelExportData,
     HireData,
     RecentHireData,
+    ReportNote,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -109,8 +110,15 @@ class ComplianceApiService {
         return data;
     }
 
-
-
+    // Report Notes Data
+    async getReportNotesByReportId(reportId: number): Promise<ReportNote[]> {
+        const { data } = await this.api.get<ReportNote[]>(`/report-notes/report/${reportId}`);
+        return data;
+    }
+    async getReportNotesByEmployerId(employerId: string): Promise<ReportNote[]> {
+        const { data } = await this.api.get<ReportNote[]>(`/report-notes/employer/${employerId}`);
+        return data;
+    }
     // Raw Hire Data
     async getRawHireData(reviewedDate?: string): Promise<HireData[]> {
         const { data } = await this.api.get<HireData[]>('/hire-data', {
@@ -137,6 +145,34 @@ class ComplianceApiService {
 
     async getExcelExportData(runId: number): Promise<ExcelExportData> {
         const { data } = await this.api.get<ExcelExportData>(`/export/data/${runId}`);
+        return data;
+    }
+
+    // Update Report
+    async updateComplianceReport(
+        reportDetailId: number,
+        updates: {
+            employerId?: string;
+            directCount?: number;
+            dispatchNeeded?: number;
+            nextHireDispatch?: string;
+            status?: string;
+            note?: string;
+            changedBy?: string;
+        }
+    ): Promise<ComplianceReport> {
+        const { data } = await this.api.put<ComplianceReport>(
+            `/report-details/${reportDetailId}`,
+            updates
+        );
+        return data;
+    }
+
+    // Notes
+    async getNotesByEmployerId(employerId: string): Promise<ReportNote[]> {
+        const { data } = await this.api.get<ReportNote[]>(
+            `/notes/employer/${employerId}`
+        );
         return data;
     }
 }

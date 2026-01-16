@@ -381,7 +381,9 @@ app.get('/api/reports/run/:runId', async (req, res) => {
         const request = pool.request();
         request.input('runId', sql.Int, req.params.runId);
         const result = await request.query(
-            'SELECT id, runId, employerId, contractorId, contractorName, complianceStatus, directCount, dispatchNeeded, nextHireDispatch FROM CMP_Reports WHERE RunId = @runId ORDER BY ContractorName'
+            `SELECT id, runId, employerId, contractorId, contractorName, complianceStatus, directCount, dispatchNeeded, nextHireDispatch,
+            (Select count(*) from CMP_ReportNotes where CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
+            FROM CMP_Reports WHERE RunId = @runId ORDER BY ContractorName`
         );
 
         res.json(result.recordset);
@@ -389,6 +391,46 @@ app.get('/api/reports/run/:runId', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// GET: Report notes by ReportId
+app.get('/api/report-notes/report/:reportId', async (req, res) => {
+    try {
+        if (!pool) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const request = pool.request();
+        request.input('reportId', sql.Int, req.params.reportId);
+        const result = await request.query(
+            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy from CMP_ReportNotes where ReportId = @reportId
+           ORDER BY CreatedDate`
+        );
+
+        res.json(result.recordset);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// GET: Report notes by EmployerId
+app.get('/api/report-notes/employer/:employerId', async (req, res) => {
+    try {
+        if (!pool) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const request = pool.request();
+        request.input('employerId', sql.NVarChar(100), req.params.employerId);
+        const result = await request.query(
+            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy from CMP_ReportNotes where EmployerId = @employerId
+           ORDER BY CreatedDate`
+        );
+
+        res.json(result.recordset);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // GET: Report Details
 app.get('/api/report-details', async (req, res) => {
@@ -427,6 +469,96 @@ app.get('/api/report-details', async (req, res) => {
         const result = await request.query(query);
         res.json(result.recordset);
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+app.put('/api/report-details/:id', async (req, res) => {
+    console.log(`[UpdateReport] PUT /api/report-details/:id called at ${new Date().toISOString()}`);
+    console.log(`[UpdateReport] Request ID: ${req.params.id}`);
+
+    try {
+        if (!pool) {
+            console.error('[UpdateReport] Database not connected');
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const { status, directCount, dispatchNeeded, nextHireDispatch, employerId, note, changedBy } = req.body;
+        console.log(`[UpdateReport] Request body:`, { status, directCount, dispatchNeeded, nextHireDispatch, employerId, note: note ? `${note.substring(0, 50)}...` : null, changedBy });
+
+        const ps = new sql.PreparedStatement(pool);
+
+        ps.input('reportId', sql.Int, req.params.id);
+        ps.input('directCount', sql.Int, directCount);
+        ps.input('dispatchNeeded', sql.Int, dispatchNeeded);
+        ps.input('nextHireDispatch', sql.NVarChar(1), nextHireDispatch);
+        ps.input('status', sql.NVarChar(50), status);
+
+        const updateSql = `update dbo.CMP_Reports set DirectCount = @directCount, DispatchNeeded = @dispatchNeeded, NextHireDispatch = @nextHireDispatch, ComplianceStatus = @status
+            where Id = @reportId`;
+
+        console.log(`[UpdateReport] Preparing update statement for reportId: ${req.params.id}`);
+        await ps.prepare(updateSql);
+
+        const updateResult = await ps.execute({
+            reportId: req.params.id,
+            directCount,
+            dispatchNeeded,
+            nextHireDispatch,
+            status
+        });
+
+        console.log(`[UpdateReport] Update result: ${updateResult.rowsAffected[0]} rows affected`);
+        await ps.unprepare();
+
+        if (updateResult.rowsAffected[0] > 0) {
+            console.log(`[UpdateReport] Creating note for employerId: ${employerId}`);
+            const psNote = new sql.PreparedStatement(pool);
+            psNote.input('reportId', sql.Int, req.params.id);
+            psNote.input('employerId', sql.NVarChar(100), employerId);
+            psNote.input('note', sql.Text, note);
+            psNote.input('changedBy', sql.NVarChar(50), changedBy);
+
+            const noteInsertSql = `INSERT INTO CMP_ReportNotes (ReportId, EmployerId, Note, CreatedBy) VALUES (@reportId, @employerId, @note, @changedBy)`;
+            console.log(`[UpdateReport] Note insert SQL: ${noteInsertSql}`);
+
+            await psNote.prepare(noteInsertSql);
+
+            try {
+                const noteResult = await psNote.execute({
+                    reportId: req.params.id,
+                    employerId,
+                    note,
+                    changedBy
+                });
+
+                console.log(`[UpdateReport] Note created: ${noteResult.rowsAffected[0]} rows inserted`);
+                await psNote.unprepare();
+            } catch (noteError) {
+                console.error(`[UpdateReport] Note insertion error: ${noteError.message}`);
+                console.error(`[UpdateReport] Note error details:`, noteError);
+                await psNote.unprepare();
+                throw noteError;
+            }
+        } else {
+            console.warn(`[UpdateReport] No rows updated for reportId: ${req.params.id}`);
+        }
+
+        console.log(`[UpdateReport] Fetching updated record for reportId: ${req.params.id}`);
+        const request = pool.request();
+        request.input('reportId', sql.Int, req.params.id);
+        const result = await request.query(
+            `SELECT id, runId, employerId, contractorId, contractorName, complianceStatus, directCount, dispatchNeeded, nextHireDispatch,
+            (Select count(*) from CMP_ReportNotes where CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
+            FROM CMP_Reports WHERE id = @reportId`
+        );
+
+        console.log(`[UpdateReport] Successfully completed update for reportId: ${req.params.id}`);
+        res.json(result.recordset);
+    } catch (error) {
+        console.error('[UpdateReport] Error:', error.message);
+        console.error('[UpdateReport] Stack:', error.stack);
         res.status(500).json({ error: error.message });
     }
 });

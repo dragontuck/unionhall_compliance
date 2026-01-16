@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Download, Loader } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Download, Loader, Edit2, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { DataTable } from './DataTable';
 import '../styles/ReportViewer.css';
@@ -14,6 +14,13 @@ export function ReportViewer() {
     const [selectedRunId, setSelectedRunId] = useState<number | null>(initialRunId);
     const [activeTab, setActiveTab] = useState<'raw' | 'details' | 'summary' | 'export'>('raw');
     const [downloadError, setDownloadError] = useState<string | null>(null);
+    const [editingRecord, setEditingRecord] = useState<any>(null);
+    const [editForm, setEditForm] = useState<any>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [viewingNotes, setViewingNotes] = useState<any>(null);
+    const [notesData, setNotesData] = useState<any[]>([]);
+    const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+    const queryClient = useQueryClient();
 
     // Fetch all runs
     const { data: runs = [] } = useQuery({
@@ -79,6 +86,69 @@ export function ReportViewer() {
         enabled: !!selectedRunId,
     });
 
+    const handleEditRecord = (record: any) => {
+        setEditingRecord(record);
+        setEditForm({
+            id: record.id,
+            contractorName: record.contractorName,
+            complianceStatus: record.complianceStatus || 'Compliant',
+            directCount: record.directCount,
+            dispatchNeeded: record.dispatchNeeded,
+            nextHireDispatch: record.nextHireDispatch,
+            note: record.note || '',
+            changedBy: record.changedBy || '',
+        });
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingRecord || !editForm) return;
+        setIsSaving(true);
+        try {
+            await apiService.updateComplianceReport(editingRecord.id, {
+                employerId: editingRecord.employerId,
+                directCount: editForm.directCount,
+                dispatchNeeded: editForm.dispatchNeeded,
+                status: editForm.complianceStatus,
+                nextHireDispatch: editForm.nextHireDispatch,
+                note: editForm.note,
+                changedBy: editForm.changedBy,
+            });
+            setEditingRecord(null);
+            setEditForm(null);
+            // Refetch the reports data
+            queryClient.invalidateQueries({ queryKey: ['reports', selectedRunId] });
+        } catch (error) {
+            console.error('Failed to save edit:', error);
+            alert('Failed to save changes');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCloseEdit = () => {
+        setEditingRecord(null);
+        setEditForm(null);
+    };
+
+    const handleViewNotes = async (record: any) => {
+        setViewingNotes(record);
+        setIsLoadingNotes(true);
+        try {
+            const notes = await apiService.getNotesByEmployerId(record.employerId);
+            setNotesData(notes);
+        } catch (error) {
+            console.error('Failed to load notes:', error);
+            setNotesData([]);
+        } finally {
+            setIsLoadingNotes(false);
+        }
+    };
+
+    const handleCloseNotes = () => {
+        setViewingNotes(null);
+        setNotesData([]);
+    };
+
     const handleDownloadExcel = async () => {
         if (!selectedRunId) return;
         setDownloadError(null);
@@ -124,14 +194,55 @@ export function ReportViewer() {
         { key: 'IsReviewed', label: 'Reviewed', sortable: true },
         { key: 'IsExcluded', label: 'Excluded', sortable: true },
     ];
-    const reportColumns: { key: keyof ComplianceReport; label: string; sortable: boolean }[] = [
+    const reportColumns: { key: keyof ComplianceReport; label: string; sortable: boolean; render?: any }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },
         { key: 'contractorId', label: 'Contractor Id', sortable: true },
-        { key: 'contractorName', label: 'Contractor', sortable: true },
+        {
+            key: 'id',
+            label: 'id',
+            sortable: false,
+            render: (value: any, row: any) => (
+                <span style={{ display: 'none' }} data-id={row.id}>{row.id}</span>
+            )
+        },
+        {
+            key: 'contractorName' as any,
+            label: 'Contractor',
+            sortable: true,
+            render: (value: any, row: any) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{row.contractorName}</span>
+                    {row.noteCount > 0 && (
+                        <button
+                            className="note-badge"
+                            onClick={() => handleViewNotes(row)}
+                            title={`View ${row.noteCount} note(s)`}
+                        >
+                            {row.noteCount}
+                        </button>
+                    )}
+                </div>
+            )
+        },
         { key: 'complianceStatus', label: 'Status', sortable: true },
         { key: 'directCount', label: 'Direct Count', sortable: true },
         { key: 'dispatchNeeded', label: 'Dispatch Needed', sortable: true },
         { key: 'nextHireDispatch', label: 'Next Hire Dispatch', sortable: true },
+        {
+            key: 'employerId' as any,
+            label: 'Actions',
+            sortable: false,
+            render: (value: any, row: any) => (
+                <button
+                    className="edit-btn"
+                    onClick={() => handleEditRecord(row)}
+                    title="Edit record"
+                    aria-label="Edit record"
+                >
+                    <Edit2 size={16} />
+                </button>
+            )
+        }
     ];
     const recentColumns: { key: keyof RecentHireData; label: string; sortable: boolean }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },
@@ -342,6 +453,153 @@ export function ReportViewer() {
 
                     </div>
                 </>
+            )}
+
+            {editingRecord && editForm && (
+                <div className="modal-overlay" onClick={handleCloseEdit}>
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Edit Report</h2>
+                            <button
+                                className="modal-close"
+                                onClick={handleCloseEdit}
+                                aria-label="Close dialog"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Contractor: {editingRecord.contractorName}</label>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="compliance-status">Compliance Status</label>
+                                    <select
+                                        id="compliance-status"
+                                        value={editForm.complianceStatus}
+                                        onChange={(e) => setEditForm({ ...editForm, complianceStatus: e.target.value })}
+                                    >
+                                        <option value="Compliant">Compliant</option>
+                                        <option value="Noncompliant">Noncompliant</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="direct-count">Direct Count</label>
+                                    <input
+                                        id="direct-count"
+                                        type="number"
+                                        value={editForm.directCount}
+                                        onChange={(e) => setEditForm({ ...editForm, directCount: parseInt(e.target.value) || 0 })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="dispatch-needed">Dispatch Needed</label>
+                                    <input
+                                        id="dispatch-needed"
+                                        type="number"
+                                        value={editForm.dispatchNeeded}
+                                        onChange={(e) => setEditForm({ ...editForm, dispatchNeeded: parseInt(e.target.value) || 0 })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="next-hire-dispatch">Next Hire Dispatch</label>
+                                    <select
+                                        id="next-hire-dispatch"
+                                        value={editForm.nextHireDispatch}
+                                        onChange={(e) => setEditForm({ ...editForm, nextHireDispatch: e.target.value })}
+                                    >
+                                        <option value="">Select...</option>
+                                        <option value="Y">Yes</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="note">Note</label>
+                                    <textarea
+                                        id="note"
+                                        value={editForm.note}
+                                        onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="changed-by">Changed By</label>
+                                    <input
+                                        id="changed-by"
+                                        type="text"
+                                        value={editForm.changedBy}
+                                        onChange={(e) => setEditForm({ ...editForm, changedBy: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={handleCloseEdit} disabled={isSaving}>
+                                Cancel
+                            </button>
+                            <button className="btn-save" onClick={handleSaveEdit} disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {viewingNotes && (
+                <div className="modal-overlay" onClick={handleCloseNotes}>
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Notes - {viewingNotes.contractorName}</h2>
+                            <button
+                                className="modal-close"
+                                onClick={handleCloseNotes}
+                                aria-label="Close dialog"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            {isLoadingNotes ? (
+                                <div style={{ textAlign: 'center', padding: '20px' }}>
+                                    <Loader size={32} className="spinning" />
+                                    <p>Loading notes...</p>
+                                </div>
+                            ) : notesData.length > 0 ? (
+                                <div className="notes-list">
+                                    {notesData.map((note, idx) => (
+                                        <div key={idx} className="note-item">
+                                            <div className="note-header">
+                                                <strong>{note.changedBy}</strong>
+                                                <span className="note-date">
+                                                    {new Date(note.createdDate || note.changedDate).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <p className="note-content">{note.note}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="no-data">No notes available</p>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={handleCloseNotes}>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

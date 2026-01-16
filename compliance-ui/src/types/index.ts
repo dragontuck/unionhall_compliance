@@ -15,6 +15,7 @@ export interface ComplianceReport {
     directCount: number;
     dispatchNeeded: number;
     nextHireDispatch: string;
+    noteCount: number;
 }
 
 export interface ComplianceReportDetail {
@@ -44,6 +45,13 @@ export interface RecentHireData {
     startDate: string;
     hireType: string;
     reviewedDate: string;
+}
+
+
+export interface ReportNote {
+    note: string;
+    createdDate: string;
+    createdBy: string;
 }
 
 export interface HireData {
