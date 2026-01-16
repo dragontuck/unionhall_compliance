@@ -8,7 +8,7 @@ This Node.js script replaces the legacy SQL cursor logic (the `2to1Queries` appr
 
 It:
 
-1. Accepts `--startDate` and `--mode` (`2To1` or `3To1`).
+1. Accepts `--reviewedDate` `(YYYY-MM-DD)` and `--mode` (`2To1` or `3To1`).
 2. Creates a new row in `dbo.CMP_Runs`.
 3. Uses the latest prior run **with StartDate < current startDate** as the "starting point" (instead of `CMP_StartingPoint2to1`).
 4. Processes hires from `dbo.CMP_HireData` where `StartDate >= startDate`.

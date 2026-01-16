@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "csv-parser": "^3.2.0",
-    "mssql": "^12.2.0"
+    "mssql": "^12.2.0",
+    "react-router-dom": "^7.12.0"
   }
 }

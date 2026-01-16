@@ -208,7 +208,7 @@ SELECT * FROM   @ComplianceReport;
 WITH LastFourRecords AS (				
 SELECT *,						
    ROW_NUMBER() OVER (PARTITION BY ContractorId ORDER BY ReviewedDate DESC) AS [Order #]					
-FROM @ComplianceReportDetail				
+FROM @ComplianceReportDetail WHERE 	MemberName NOT LIKE 'xxxx%'			
 )				
 SELECT * FROM LastFourRecords				
 WHERE [Order #] <= 4							
