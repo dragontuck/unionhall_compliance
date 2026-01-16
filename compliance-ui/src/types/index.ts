@@ -52,6 +52,7 @@ export interface ReportNote {
     note: string;
     createdDate: string;
     createdBy: string;
+    reviewedDate: string;
 }
 
 export interface HireData {

@@ -131,10 +131,12 @@ export function ReportViewer() {
     };
 
     const handleViewNotes = async (record: any) => {
+        console.log('Opening notes for:', record);
         setViewingNotes(record);
         setIsLoadingNotes(true);
         try {
             const notes = await apiService.getNotesByEmployerId(record.employerId);
+            console.log('Notes loaded:', notes);
             setNotesData(notes);
         } catch (error) {
             console.error('Failed to load notes:', error);
@@ -215,7 +217,10 @@ export function ReportViewer() {
                     {row.noteCount > 0 && (
                         <button
                             className="note-badge"
-                            onClick={() => handleViewNotes(row)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewNotes(row);
+                            }}
                             title={`View ${row.noteCount} note(s)`}
                         >
                             {row.noteCount}
@@ -557,8 +562,8 @@ export function ReportViewer() {
             )}
 
             {viewingNotes && (
-                <div className="modal-overlay" onClick={handleCloseNotes}>
-                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay" onClick={handleCloseNotes} role="dialog" aria-modal="true">
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()} role="document" style={{ maxWidth: '700px' }}>
                         <div className="modal-header">
                             <h2>Notes - {viewingNotes.contractorName}</h2>
                             <button
@@ -569,28 +574,36 @@ export function ReportViewer() {
                                 ✕
                             </button>
                         </div>
-                        <div className="modal-body">
+                        <div className="modal-body" style={{ padding: '0' }}>
                             {isLoadingNotes ? (
                                 <div style={{ textAlign: 'center', padding: '20px' }}>
                                     <Loader size={32} className="spinning" />
                                     <p>Loading notes...</p>
                                 </div>
                             ) : notesData.length > 0 ? (
-                                <div className="notes-list">
-                                    {notesData.map((note, idx) => (
-                                        <div key={idx} className="note-item">
-                                            <div className="note-header">
-                                                <strong>{note.changedBy}</strong>
-                                                <span className="note-date">
-                                                    {new Date(note.createdDate || note.changedDate).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <p className="note-content">{note.note}</p>
-                                        </div>
-                                    ))}
-                                </div>
+                                <DataTable
+                                    columns={[
+                                        {
+                                            key: 'reviewedDate' as any,
+                                            label: 'Reviewed Date',
+                                            sortable: true,
+                                            render: (value: any) => value ? new Date(value).toLocaleDateString() : '-'
+                                        },
+                                        { key: 'note' as any, label: 'Note', sortable: false },
+                                        { key: 'createdBy' as any, label: 'Created By', sortable: true },
+                                        {
+                                            key: 'createdDate' as any,
+                                            label: 'Date',
+                                            sortable: true,
+                                            render: (value: any) => new Date(value).toLocaleDateString()
+                                        },
+                                    ]}
+                                    data={notesData}
+                                    searchableColumns={['note']}
+                                    maxHeight="250px"
+                                />
                             ) : (
-                                <p className="no-data">No notes available</p>
+                                <p className="no-data" style={{ padding: '20px' }}>No notes available</p>
                             )}
                         </div>
                         <div className="modal-footer">

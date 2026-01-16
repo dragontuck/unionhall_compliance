@@ -171,7 +171,7 @@ class ComplianceApiService {
     // Notes
     async getNotesByEmployerId(employerId: string): Promise<ReportNote[]> {
         const { data } = await this.api.get<ReportNote[]>(
-            `/notes/employer/${employerId}`
+            `/report-notes/employer/${employerId}`
         );
         return data;
     }

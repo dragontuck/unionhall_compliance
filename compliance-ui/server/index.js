@@ -402,7 +402,11 @@ app.get('/api/report-notes/report/:reportId', async (req, res) => {
         const request = pool.request();
         request.input('reportId', sql.Int, req.params.reportId);
         const result = await request.query(
-            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy from CMP_ReportNotes where ReportId = @reportId
+            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy, convert(nvarchar, r.ReviewedDate, 25) as reviewedDate  
+            from CMP_ReportNotes n
+            inner join CMP_Reports rep on rep.Id=n.ReportId
+            inner join CMP_Runs r on r.id=rep.runId 
+            where n.ReportId = @reportId
            ORDER BY CreatedDate`
         );
 
@@ -421,7 +425,10 @@ app.get('/api/report-notes/employer/:employerId', async (req, res) => {
         const request = pool.request();
         request.input('employerId', sql.NVarChar(100), req.params.employerId);
         const result = await request.query(
-            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy from CMP_ReportNotes where EmployerId = @employerId
+            `SELECT note, convert(nvarchar, createdDate, 25) as createdDate, createdBy, convert(nvarchar, r.ReviewedDate, 25) as reviewedDate  from CMP_ReportNotes n
+            inner join CMP_Reports rep on rep.Id=n.ReportId
+            inner join CMP_Runs r on r.id=rep.runId 
+            where n.EmployerId = @employerId
            ORDER BY CreatedDate`
         );
 
