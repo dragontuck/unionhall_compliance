@@ -31,6 +31,8 @@ export function ReportViewer() {
     // Get the selected run's reviewed date
     const selectedRun = runs.find(r => r.id == selectedRunId);
     const selectedRunReviewedDate = selectedRun?.reviewedDate;
+    const selectedRunNumber = selectedRun?.run;
+    const selectedRunMode = selectedRun?.modeName;
     // Fetch raw hire data
     const {
         data: rawHires = [],
@@ -159,7 +161,7 @@ export function ReportViewer() {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `compliance_report_${selectedRunId}.xlsx`;
+            link.download = `ContractorComplianceReport${selectedRunMode} - ${selectedRunReviewedDate} - ${selectedRunNumber}.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
