@@ -1,7 +1,14 @@
-import { useState } from 'react';
-import { Upload, Loader } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
-import { apiService } from '../services/api';
+/**
+ * FileUpload - Smart component for file upload management
+ * Composition over inheritance: Uses presentational components
+ * Single Responsibility: Only handles file upload business logic
+ */
+
+import { useState, useCallback } from 'react';
+import { useImportHireData } from '../hooks';
+import { useApiClient } from '../providers';
+import { isValidCsvFile, extractErrorMessage } from '../utils';
+import { FileUploadDropZone, FileInfo } from './presentational';
 import '../styles/FileUpload.css';
 
 interface FileUploadProps {
@@ -10,110 +17,90 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onSuccess, onError }: FileUploadProps) {
+    const apiClient = useApiClient();
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    const mutation = useMutation({
-        mutationFn: (file: File) => apiService.importHireData(file),
-        onSuccess: (data) => {
-            onSuccess?.(data);
-            setSelectedFile(null);
-        },
-        onError: (error: any) => {
-            const message = error.response?.data?.error || error.message || 'Upload failed';
-            onError?.(message);
-        },
-    });
+    const mutation = useImportHireData(apiClient);
 
-    const handleDrag = (e: React.DragEvent) => {
+    const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (e.type === 'dragenter' || e.type === 'dragover') {
-            setDragActive(true);
-        } else if (e.type === 'dragleave') {
+        setDragActive(e.type === 'dragenter' || e.type === 'dragover');
+    }, []);
+
+    const handleFileSelect = useCallback(
+        (file: File) => {
+            if (isValidCsvFile(file)) {
+                setSelectedFile(file);
+            } else {
+                onError?.('Please upload a CSV file');
+            }
+        },
+        [onError]
+    );
+
+    const handleDrop = useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
             setDragActive(false);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            const file = files[0];
-            if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-                setSelectedFile(file);
-            } else {
-                onError?.('Please upload a CSV file');
+            const files = e.dataTransfer.files;
+            if (files?.length > 0) {
+                handleFileSelect(files[0]);
             }
-        }
-    };
+        },
+        [handleFileSelect]
+    );
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.currentTarget.files;
-        if (files && files.length > 0) {
-            const file = files[0];
-            if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-                setSelectedFile(file);
-            } else {
-                onError?.('Please upload a CSV file');
+    const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const files = e.currentTarget.files;
+            if (files?.length > 0) {
+                handleFileSelect(files[0]);
             }
-        }
-    };
+        },
+        [handleFileSelect]
+    );
 
-    const handleImport = () => {
+    const handleImport = useCallback(() => {
         if (selectedFile) {
-            mutation.mutate(selectedFile);
+            mutation.mutate(selectedFile, {
+                onSuccess: (data) => {
+                    onSuccess?.(data);
+                    setSelectedFile(null);
+                },
+                onError: (error) => {
+                    onError?.(extractErrorMessage(error, 'Upload failed'));
+                },
+            });
         }
-    };
+    }, [selectedFile, mutation, onSuccess, onError]);
 
     return (
         <div className="file-upload-container">
             <h3>Hire Data Import</h3>
-            <div
-                className={`upload-zone ${dragActive ? 'active' : ''}`}
+
+            <FileUploadDropZone
+                isLoading={mutation.isPending}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
-            >
-                <input
-                    type="file"
-                    id="file-input"
-                    accept=".csv"
-                    onChange={handleChange}
-                    disabled={mutation.isPending}
-                    className="file-input"
-                />
-                <label htmlFor="file-input" className="upload-label">
-                    {mutation.isPending ? (
-                        <>
-                            <Loader size={48} className="icon spinning" />
-                            <p>Uploading...</p>
-                        </>
-                    ) : (
-                        <>
-                            <Upload size={48} className="icon" />
-                            <p className="main-text">Drag CSV file here or click to select</p>
-                            <p className="sub-text">Accepted format: .csv</p>
-                        </>
-                    )}
-                </label>
-            </div>
+                onChange={handleChange}
+            />
 
             {selectedFile && !mutation.isPending && (
-                <div className="selected-file-info">
-                    <span>Selected file: {selectedFile.name}</span>
-                    <button className="import-btn" onClick={handleImport} disabled={mutation.isPending}>
-                        Import
-                    </button>
-                </div>
+                <FileInfo
+                    fileName={selectedFile.name}
+                    isLoading={mutation.isPending}
+                    onImport={handleImport}
+                />
             )}
 
             {mutation.isError && (
                 <div className="error-message">
-                    <strong>Error:</strong> {mutation.error?.message || 'Upload failed'}
+                    <strong>Error:</strong> {extractErrorMessage(mutation.error, 'Upload failed')}
                 </div>
             )}
 

@@ -329,14 +329,17 @@ export function ReportViewer() {
                         >
                             Recent Hires ({recentHires.length})
                         </button>
-                        <button
-                            className="download-btn"
-                            onClick={handleDownloadExcel}
-                            title="Download report as Excel"
-                            aria-label="Download report"
-                        >
-                            <Download size={18} />
-                        </button>
+                        <div className="download-section">
+                            <span className="download-label">(Selected Run Id: {selectedRunId})</span>
+                            <button
+                                className="download-btn"
+                                onClick={handleDownloadExcel}
+                                title="Download report as Excel"
+                                aria-label="Download report"
+                            >
+                                <Download size={18} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="tab-content">
