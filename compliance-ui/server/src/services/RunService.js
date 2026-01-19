@@ -3,13 +3,15 @@
  * Follows Single Responsibility Principle (SRP)
  * Orchestrates run-related business logic using repositories
  */
+import XLSX from 'xlsx';
 
 export class RunService {
-    constructor(runRepository, modeRepository, reportRepository, reportDetailRepository) {
+    constructor(runRepository, modeRepository, reportRepository, reportDetailRepository, hireDataRepository) {
         this.runRepo = runRepository;
         this.modeRepo = modeRepository;
         this.reportRepo = reportRepository;
         this.detailRepo = reportDetailRepository;
+        this.hireDataRepo = hireDataRepository;
     }
 
     /**
@@ -70,11 +72,30 @@ export class RunService {
 
         const reports = await this.reportRepo.getReportsByRun(runId);
         const details = await this.detailRepo.getDetailsByRun(runId);
+        const lastHires = await this.detailRepo.getLast4Hires(runId);
+        const recentHires = await this.hireDataRepo.getRecentHires(runId);
 
-        return {
-            run,
-            reports,
-            details
-        };
+        const wb = XLSX.utils.book_new();
+
+        // Details sheet
+        const detailsSheet = XLSX.utils.json_to_sheet(details);
+        XLSX.utils.book_append_sheet(wb, detailsSheet, 'Detail');
+
+        // Reports sheet
+        const reportsSheet = XLSX.utils.json_to_sheet(reports);
+        XLSX.utils.book_append_sheet(wb, reportsSheet, 'Report');
+
+        // Last 4 sheet
+        const last4Sheet = XLSX.utils.json_to_sheet(lastHires);
+        XLSX.utils.book_append_sheet(wb, last4Sheet, 'Last 4');
+
+        // Recent Hire sheet
+        const recentHireSheet = XLSX.utils.json_to_sheet(recentHires);
+        XLSX.utils.book_append_sheet(wb, recentHireSheet, 'Recent Hire');
+
+        // Write to buffer
+        const buffer = XLSX.write(wb, { type: 'buffer' });
+
+        return buffer;
     }
 }

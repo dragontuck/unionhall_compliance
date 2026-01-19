@@ -83,7 +83,8 @@ export class Container {
                 c.resolve('runRepository'),
                 c.resolve('modeRepository'),
                 c.resolve('reportRepository'),
-                c.resolve('reportDetailRepository')
+                c.resolve('reportDetailRepository'),
+                c.resolve('hireDataRepository')
             )
         );
 

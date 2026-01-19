@@ -65,8 +65,11 @@ export class RunController {
             throw AppError.badRequest('Run ID must be a valid integer');
         }
 
-        const runData = await this.runService.getRunForExport(runId);
-        res.json(runData);
+        const buffer = await this.runService.getRunForExport(runId);
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="compliance_report_${req.params.runId}.xlsx"`);
+        res.send(buffer);
     });
 
     /**
