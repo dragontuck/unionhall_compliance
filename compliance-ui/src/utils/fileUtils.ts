@@ -6,16 +6,18 @@
 export const FILE_CONSTANTS = {
     CSV_MIME_TYPE: 'text/csv',
     CSV_EXTENSION: '.csv',
+    MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
 };
 
 /**
  * Validates if a file is a CSV
  */
 export function isValidCsvFile(file: File): boolean {
-    return (
-        file.type === FILE_CONSTANTS.CSV_MIME_TYPE ||
-        file.name.endsWith(FILE_CONSTANTS.CSV_EXTENSION)
-    );
+    const isCsvType = file.type === FILE_CONSTANTS.CSV_MIME_TYPE ||
+        file.type === 'application/vnd.ms-excel' ||
+        file.name.endsWith(FILE_CONSTANTS.CSV_EXTENSION);
+    const isValidSize = file.size <= FILE_CONSTANTS.MAX_FILE_SIZE;
+    return isCsvType && isValidSize;
 }
 
 /**

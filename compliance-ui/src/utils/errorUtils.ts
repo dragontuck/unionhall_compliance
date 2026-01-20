@@ -35,7 +35,8 @@ export function extractErrorMessage(error: unknown, defaultMessage: string = 'An
  * Determines if error is a network error
  */
 export function isNetworkError(error: unknown): boolean {
-    const err = error as ErrorResponse;
+    if (!error) return false;
+    const err = error as any;
     return err?.response === undefined;
 }
 
@@ -43,6 +44,7 @@ export function isNetworkError(error: unknown): boolean {
  * Determines if error is a server error (5xx)
  */
 export function isServerError(error: unknown): boolean {
-    const err = error as ErrorResponse;
-    return err?.response?.data?.error !== undefined;
+    if (!error) return false;
+    const err = error as any;
+    return err?.response?.status >= 500;
 }
