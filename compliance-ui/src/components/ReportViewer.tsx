@@ -12,7 +12,7 @@ export function ReportViewer() {
     const { runId } = useParams();
     const initialRunId = runId ? Number(runId) : null;
     const [selectedRunId, setSelectedRunId] = useState<number | null>(initialRunId);
-    const [activeTab, setActiveTab] = useState<'raw' | 'details' | 'summary' | 'export'>('raw');
+    const [activeTab, setActiveTab] = useState<'raw' | 'details' | 'summary' | 'lastHires' | 'recentHires'>('summary');
     const [downloadError, setDownloadError] = useState<string | null>(null);
     const [editingRecord, setEditingRecord] = useState<any>(null);
     const [editForm, setEditForm] = useState<any>(null);
@@ -300,12 +300,6 @@ export function ReportViewer() {
                 <>
                     <div className="tab-navigation">
                         <button
-                            className={`tab ${activeTab === 'raw' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('raw')}
-                        >
-                            Raw Hires ({rawHires.length})
-                        </button>
-                        <button
                             className={`tab ${activeTab === 'summary' ? 'active' : ''}`}
                             onClick={() => setActiveTab('summary')}
                         >
@@ -328,6 +322,12 @@ export function ReportViewer() {
                             onClick={() => setActiveTab('recentHires')}
                         >
                             Recent Hires ({recentHires.length})
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'raw' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('raw')}
+                        >
+                            Raw Hires ({rawHires.length})
                         </button>
                         <div className="download-section">
                             <span className="download-label">(Selected Run Id: {selectedRunId})</span>
