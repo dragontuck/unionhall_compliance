@@ -16,6 +16,7 @@ import { RunService } from '../services/RunService.js';
 import { ReportService } from '../services/ReportService.js';
 import { ModeService } from '../services/ModeService.js';
 import { HireDataService } from '../services/HireDataService.js';
+import { ComplianceEngine } from '../services/compliance-engine.js';
 
 export class Container {
     constructor(dbPool) {
@@ -69,13 +70,16 @@ export class Container {
         const repository = new MssqlRepository(this.dbPool);
         this.register('repository', repository);
 
-        // Repositories
-        this.registerFactory('runRepository', (c) => new RunRepository(repository));
-        this.registerFactory('reportRepository', (c) => new ReportRepository(repository));
-        this.registerFactory('reportDetailRepository', (c) => new ReportDetailRepository(repository));
-        this.registerFactory('reportNoteRepository', (c) => new ReportNoteRepository(repository));
-        this.registerFactory('modeRepository', (c) => new ModeRepository(repository));
-        this.registerFactory('hireDataRepository', (c) => new HireDataRepository(repository));
+        // Repositories - pass pool directly (repositories extend MssqlRepository)
+        this.registerFactory('runRepository', (c) => new RunRepository(this.dbPool));
+        this.registerFactory('reportRepository', (c) => new ReportRepository(this.dbPool));
+        this.registerFactory('reportDetailRepository', (c) => new ReportDetailRepository(this.dbPool));
+        this.registerFactory('reportNoteRepository', (c) => new ReportNoteRepository(this.dbPool));
+        this.registerFactory('modeRepository', (c) => new ModeRepository(this.dbPool));
+        this.registerFactory('hireDataRepository', (c) => new HireDataRepository(this.dbPool));
+
+        // Business logic
+        this.registerFactory('complianceEngine', (c) => new ComplianceEngine());
 
         // Services
         this.registerFactory('runService', (c) =>
@@ -84,7 +88,8 @@ export class Container {
                 c.resolve('modeRepository'),
                 c.resolve('reportRepository'),
                 c.resolve('reportDetailRepository'),
-                c.resolve('hireDataRepository')
+                c.resolve('hireDataRepository'),
+                c.resolve('complianceEngine')
             )
         );
 

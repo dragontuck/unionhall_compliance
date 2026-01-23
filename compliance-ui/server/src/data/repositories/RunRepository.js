@@ -3,10 +3,11 @@
  * Follows Single Responsibility Principle (SRP)
  * All run-related database operations are encapsulated here
  */
+import { MssqlRepository } from '../MssqlRepository.js';
 
-export class RunRepository {
-    constructor(repository) {
-        this.repo = repository;
+export class RunRepository extends MssqlRepository {
+    constructor(pool) {
+        super(pool);
     }
 
     /**
@@ -15,7 +16,7 @@ export class RunRepository {
      * @returns {Promise<Array>} Array of run records
      */
     async getAllRuns(limit = 100) {
-        return this.repo.query(`
+        return this.query(`
             SELECT TOP ${limit} 
                 r.id, 
                 CONVERT(nvarchar, r.ReviewedDate, 25) as reviewedDate, 
@@ -33,7 +34,7 @@ export class RunRepository {
      * @returns {Promise<Object|null>} Run record or null
      */
     async getRunById(runId) {
-        return this.repo.queryOne(
+        return this.queryOne(
             'SELECT * FROM CMP_Runs WHERE id = @id',
             { id: runId }
         );
@@ -46,7 +47,7 @@ export class RunRepository {
      * @returns {Promise<number>} Next run number
      */
     async getNextRunNumber(modeId, reviewedDate) {
-        const result = await this.repo.queryScalar(
+        const result = await this.queryScalar(
             `SELECT ISNULL(MAX(run), 0) + 1 
              FROM CMP_Runs 
              WHERE ModeId = @modeId AND CAST(ReviewedDate AS DATE) = CAST(@reviewedDate AS DATE)`,
@@ -63,7 +64,7 @@ export class RunRepository {
     async createRun(runData) {
         const { modeId, reviewedDate, runNumber, output } = runData;
 
-        const result = await this.repo.query(`
+        const result = await this.query(`
             INSERT INTO CMP_Runs (ModeId, ReviewedDate, run, Output)
             VALUES (@modeId, @reviewedDate, @runNumber, @output);
             SELECT SCOPE_IDENTITY() as id;
@@ -84,11 +85,37 @@ export class RunRepository {
      * @returns {Promise<Object|null>} Previous run or null
      */
     async getPreviousRun(modeId, reviewedDate) {
-        return this.repo.queryOne(`
+        return this.queryOne(`
             SELECT TOP 1 id, ModeId, ReviewedDate, run
             FROM CMP_Runs
             WHERE ModeId = @modeId AND ReviewedDate < @reviewedDate
             ORDER BY ReviewedDate DESC
         `, { modeId, reviewedDate });
+    }
+
+    /**
+     * Begin transaction
+     * @returns {Promise<Object>} Transaction object
+     */
+    async beginTransaction() {
+        return super.beginTransaction();
+    }
+
+    /**
+     * Commit transaction
+     * @param {Object} transaction - Transaction object
+     * @returns {Promise<void>}
+     */
+    async commitTransaction(transaction) {
+        return super.commitTransaction(transaction);
+    }
+
+    /**
+     * Rollback transaction
+     * @param {Object} transaction - Transaction object
+     * @returns {Promise<void>}
+     */
+    async rollbackTransaction(transaction) {
+        return super.rollbackTransaction(transaction);
     }
 }

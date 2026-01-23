@@ -196,7 +196,7 @@ export function ReportViewer() {
         { key: 'StartDate', label: 'Start Date', sortable: true },
         { key: 'EmployerID', label: 'Employer ID', sortable: true },
         { key: 'IsReviewed', label: 'Reviewed', sortable: true },
-        { key: 'IsExcluded', label: 'Excluded', sortable: true },
+        { key: 'ReviewedDate', label: 'Reviewed Date', sortable: true },
     ];
     const reportColumns: { key: keyof ComplianceReport; label: string; sortable: boolean; render?: any }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },

@@ -5,8 +5,14 @@
  * Each repository should implement methods for a specific domain (Runs, Reports, Hires, etc.)
  * This abstraction allows easy swapping of implementations (SQL, NoSQL, Mock, etc.)
  */
+import sql from 'mssql';
 
 export class IRepository {
+    /**
+     * SQL type definitions from mssql library
+     */
+    sql = sql;
+
     /**
      * Execute a query with optional parameters
      * @param {string} sql - SQL query string

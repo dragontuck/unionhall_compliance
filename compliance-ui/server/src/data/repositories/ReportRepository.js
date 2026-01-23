@@ -3,10 +3,11 @@
  * Follows Single Responsibility Principle (SRP)
  * All report-related database operations are encapsulated here
  */
+import { MssqlRepository } from '../MssqlRepository.js';
 
-export class ReportRepository {
-    constructor(repository) {
-        this.repo = repository;
+export class ReportRepository extends MssqlRepository {
+    constructor(pool) {
+        super(pool);
     }
 
     /**
@@ -33,7 +34,7 @@ export class ReportRepository {
         }
 
         query += ' ORDER BY id DESC';
-        return this.repo.query(query, params);
+        return this.query(query, params);
     }
 
     /**
@@ -42,7 +43,7 @@ export class ReportRepository {
      * @returns {Promise<Array>} Reports with summary data
      */
     async getReportsByRun(runId) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 id, 
                 runId, 
@@ -67,7 +68,7 @@ export class ReportRepository {
      * @returns {Promise<Object|null>} Report or null
      */
     async getReportById(reportId) {
-        return this.repo.queryOne(
+        return this.queryOne(
             `SELECT id, runId, employerId, contractorId, contractorName, complianceStatus, 
                     directCount, dispatchNeeded, nextHireDispatch,
                     (SELECT COUNT(*) FROM CMP_ReportNotes 
@@ -85,7 +86,7 @@ export class ReportRepository {
     async updateReport(reportData) {
         const { reportId, status, directCount, dispatchNeeded, nextHireDispatch } = reportData;
 
-        return this.repo.execute(`
+        return this.execute(`
             UPDATE CMP_Reports 
             SET DirectCount = @directCount, 
                 DispatchNeeded = @dispatchNeeded, 
@@ -109,7 +110,7 @@ export class ReportRepository {
     async createReport(reportData) {
         const { runId, employerId, contractorId, contractorName, complianceStatus, dispatchNeeded, nextHireDispatch, directCount } = reportData;
 
-        return this.repo.execute(`
+        return this.execute(`
             INSERT INTO CMP_Reports 
             (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount)
             VALUES 
@@ -150,6 +151,6 @@ export class ReportRepository {
             params.prevRunId = prevRunId;
         }
 
-        return this.repo.query(query, params);
+        return this.query(query, params);
     }
 }

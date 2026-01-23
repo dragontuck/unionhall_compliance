@@ -11,8 +11,8 @@ import '../../styles/RunExecutor.css';
 export interface RunExecutorFormProps {
     reviewedDate: string;
     onReviewedDateChange: (date: string) => void;
-    mode: string;
-    onModeChange: (mode: string) => void;
+    modeId: number;
+    onModeChange: (modeId: number) => void;
     modes: Mode[];
     dryRun: boolean;
     onDryRunChange: (checked: boolean) => void;
@@ -24,7 +24,7 @@ export interface RunExecutorFormProps {
 export function RunExecutorForm({
     reviewedDate,
     onReviewedDateChange,
-    mode,
+    modeId,
     onModeChange,
     modes,
     dryRun,
@@ -59,14 +59,14 @@ export function RunExecutorForm({
             >
                 <select
                     id="mode"
-                    value={mode}
-                    onChange={(e) => onModeChange(e.target.value)}
+                    value={modeId}
+                    onChange={(e) => onModeChange(Number(e.target.value))}
                     disabled={isLoading}
                     className="form-input"
                 >
                     <option value="">Select a mode</option>
                     {modes.map((m) => (
-                        <option key={m.id} value={m.mode_name}>
+                        <option key={m.id} value={m.id}>
                             {m.mode_name} (Max Direct: {m.mode_value})
                         </option>
                     ))}

@@ -3,10 +3,11 @@
  * Follows Single Responsibility Principle (SRP)
  * All report detail database operations are encapsulated here
  */
+import { MssqlRepository } from '../MssqlRepository.js';
 
-export class ReportDetailRepository {
-    constructor(repository) {
-        this.repo = repository;
+export class ReportDetailRepository extends MssqlRepository {
+    constructor(pool) {
+        super(pool);
     }
 
     /**
@@ -37,7 +38,7 @@ export class ReportDetailRepository {
         }
 
         query += ' ORDER BY id DESC';
-        return this.repo.query(query, params);
+        return this.query(query, params);
     }
 
     /**
@@ -46,7 +47,7 @@ export class ReportDetailRepository {
      * @returns {Promise<Array>} Report details with mode data
      */
     async getDetailsByRun(runId) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 d.employerId, 
                 d.contractorId, 
@@ -86,7 +87,7 @@ export class ReportDetailRepository {
             dispatchNeeded, nextHireDispatch, reviewedDate
         } = detailData;
 
-        return this.repo.execute(`
+        return this.execute(`
             INSERT INTO dbo.CMP_ReportDetails
             (RunId, EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType,
              ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate)
@@ -116,7 +117,7 @@ export class ReportDetailRepository {
      * @returns {Promise<Array>} Last 4 hires per contractor
      */
     async getLast4Hires(runId) {
-        return this.repo.query(`
+        return this.query(`
             WITH Contractors AS (
                 SELECT DISTINCT EmployerId, ContractorId FROM dbo.CMP_Reports WHERE RunId = @runId
             ), 

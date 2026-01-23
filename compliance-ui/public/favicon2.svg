@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+    <defs>
+        <radialGradient id="badge2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+            gradientTransform="translate(256 210) rotate(90) scale(250)">
+            <stop stop-color="#FFFFFF" />
+            <stop offset="1" stop-color="#F1F5FF" />
+        </radialGradient>
+
+        <linearGradient id="ring2" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#A78BFA" />
+            <stop offset="0.35" stop-color="#22D3EE" />
+            <stop offset="0.7" stop-color="#34D399" />
+            <stop offset="1" stop-color="#FBBF24" />
+        </linearGradient>
+
+        <linearGradient id="ribbon2" x1="290" y1="290" x2="410" y2="410"
+            gradientUnits="userSpaceOnUse">
+            <stop stop-color="#F43F5E" />
+            <stop offset="1" stop-color="#FB7185" />
+        </linearGradient>
+
+        <filter id="shadow2" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0B102033" />
+        </filter>
+    </defs>
+
+    <!-- Badge -->
+    <g filter="url(#shadow2)">
+        <circle cx="256" cy="256" r="210" fill="url(#badge2)" />
+        <circle cx="256" cy="256" r="210" stroke="url(#ring2)" stroke-width="24" />
+    </g>
+
+    <!-- Document -->
+    <g filter="url(#shadow2)">
+        <rect x="168" y="146" width="190" height="240" rx="28" fill="white" stroke="#E2E8F0"
+            stroke-width="8" />
+        <rect x="192" y="186" width="142" height="16" rx="8" fill="#94A3B8" />
+        <rect x="192" y="220" width="120" height="16" rx="8" fill="#94A3B8" opacity="0.9" />
+        <rect x="192" y="254" width="150" height="16" rx="8" fill="#94A3B8" opacity="0.85" />
+        <rect x="192" y="288" width="110" height="16" rx="8" fill="#94A3B8" opacity="0.8" />
+        <rect x="168" y="146" width="190" height="26" rx="13" fill="url(#ring2)" opacity="0.9" />
+    </g>
+
+    <!-- Ribbon / check -->
+    <g filter="url(#shadow2)">
+        <circle cx="360" cy="334" r="66" fill="url(#ribbon2)" />
+        <path d="M330 334L350 354L392 312" stroke="white" stroke-width="18" stroke-linecap="round"
+            stroke-linejoin="round" />
+        <path d="M340 392L360 428L380 392" fill="url(#ribbon2)" />
+    </g>
+
+    <!-- Accent sparkles -->
+    <path d="M110 210L124 214L110 218L106 232L102 218L88 214L102 210L106 196L110 210Z"
+        fill="#22C55E" opacity="0.85" />
+    <path d="M410 180L422 184L410 188L406 200L402 188L390 184L402 180L406 168L410 180Z"
+        fill="#3B82F6" opacity="0.85" />
+</svg>

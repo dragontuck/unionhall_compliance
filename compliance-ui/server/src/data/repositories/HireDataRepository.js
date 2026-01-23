@@ -3,10 +3,11 @@
  * Follows Single Responsibility Principle (SRP)
  * All hire data database operations are encapsulated here
  */
+import { MssqlRepository } from '../MssqlRepository.js';
 
-export class HireDataRepository {
-    constructor(repository) {
-        this.repo = repository;
+export class HireDataRepository extends MssqlRepository {
+    constructor(pool) {
+        super(pool);
     }
 
     /**
@@ -25,7 +26,7 @@ export class HireDataRepository {
         }
 
         query += ' ORDER BY ContractorName, StartDate, MemberName';
-        return this.repo.query(query, params);
+        return this.query(query, params);
     }
 
     /**
@@ -34,7 +35,7 @@ export class HireDataRepository {
      * @returns {Promise<Array>} Recent hire records
      */
     async getRecentHires(runId) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 employerId, 
                 ContractorID AS contractorId, 
@@ -45,12 +46,13 @@ export class HireDataRepository {
                 hireType, 
                 CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate 
             FROM dbo.CMP_HireData 
-            WHERE ReviewedDate >= (
-                SELECT CAST(MAX(ReviewedDate) AS date) AS MaxReviewedDate
-                FROM dbo.CMP_HireData
+            WHERE CAST(ReviewedDate AS DATE) = (
+                SELECT CAST(ReviewedDate AS DATE) AS ReviewedDate
+                FROM dbo.CMP_Runs
+                WHERE id = @runId
             ) 
             ORDER BY StartDate, ReviewedDate, ContractorName
-        `);
+        `, { runId });
     }
 
     /**
@@ -60,7 +62,7 @@ export class HireDataRepository {
      * @returns {Promise<Array>} Hire records for contractor
      */
     async getHiresForContractor(contractorId, reviewedDate) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 EmployerId, 
                 StartDate, 
@@ -86,7 +88,7 @@ export class HireDataRepository {
             excludedComplianceRules, createdByUserName, createdByName, createdOn
         } = hireData;
 
-        return this.repo.execute(`
+        return this.execute(`
             INSERT INTO dbo.CMP_ReviewedHires
             (EmployerID, ContractorName, MemberName, IANumber, StartDate, HireType, 
              IsReviewed, IsExcluded, EndDate, ContractorID, IsInactive, ReviewedDate,

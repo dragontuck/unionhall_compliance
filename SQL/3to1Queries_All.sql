@@ -99,7 +99,7 @@ ContractorName
                                    --COALESCE (cm.NewContractorName, ContractorName) AS ContractorName
                             FROM   dbo.CMP_HireData
                                   -- LEFT OUTER JOIN @ContractorMapping AS cm ON CMP_HireData.ContractorID = cm.OldContractorId AND CMP_HireData.EmployerId = cm.OldEmployerId
-                            WHERE  [StartDate] > '2025-12-14'
+                            WHERE  ReviewedDate > '2025-12-24'
 							AND 
 							EmployerId = @employerid
                                    --AND (EmployerId = @employerid

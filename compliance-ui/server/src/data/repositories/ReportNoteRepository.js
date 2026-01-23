@@ -3,10 +3,11 @@
  * Follows Single Responsibility Principle (SRP)
  * All report note database operations are encapsulated here
  */
+import { MssqlRepository } from '../MssqlRepository.js';
 
-export class ReportNoteRepository {
-    constructor(repository) {
-        this.repo = repository;
+export class ReportNoteRepository extends MssqlRepository {
+    constructor(pool) {
+        super(pool);
     }
 
     /**
@@ -15,7 +16,7 @@ export class ReportNoteRepository {
      * @returns {Promise<Array>} Array of note records
      */
     async getNotesByReport(reportId) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 note, 
                 CONVERT(nvarchar, createdDate, 25) as createdDate, 
@@ -35,7 +36,7 @@ export class ReportNoteRepository {
      * @returns {Promise<Array>} Array of note records
      */
     async getNotesByEmployer(employerId) {
-        return this.repo.query(`
+        return this.query(`
             SELECT 
                 note, 
                 CONVERT(nvarchar, createdDate, 25) as createdDate, 
@@ -57,7 +58,7 @@ export class ReportNoteRepository {
     async createNote(noteData) {
         const { reportId, employerId, note, changedBy } = noteData;
 
-        return this.repo.execute(`
+        return this.execute(`
             INSERT INTO CMP_ReportNotes (ReportId, EmployerId, Note, CreatedBy) 
             VALUES (@reportId, @employerId, @note, @changedBy)
         `, {

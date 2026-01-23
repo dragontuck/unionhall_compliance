@@ -41,7 +41,7 @@ export class AxiosApiClient implements IApiClient {
     }
 
     async executeRun(request: RunRequest): Promise<ComplianceRun> {
-        const { data } = await this.api.post<ComplianceRun>('/runs/execute', request);
+        const { data } = await this.api.post<ComplianceRun>('/runs', request);
         return data;
     }
 

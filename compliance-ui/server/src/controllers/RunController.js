@@ -44,15 +44,18 @@ export class RunController {
             throw AppError.badRequest('Mode ID and reviewed date are required');
         }
 
-        const newRunId = await this.runService.createRun({
+        const newRunResult = await this.runService.createRun({
             modeId: parseInt(modeId),
             reviewedDate,
             runNumber: runNumber ? parseInt(runNumber) : undefined
         });
 
+        if (!newRunResult.success) {
+            throw AppError.internalServerError(newRunResult.message);
+        }
         res.status(201).json({
-            id: newRunId,
-            message: 'Run created successfully'
+            id: newRunResult.runId,
+            message: newRunResult.message
         });
     });
 

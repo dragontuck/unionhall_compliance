@@ -20,14 +20,14 @@ export function RunExecutor({ onSuccess, onError }: RunExecutorProps) {
     const apiClient = useApiClient();
     const navigate = useNavigate();
     const [reviewedDate, setReviewedDate] = useState('');
-    const [mode, setMode] = useState('');
+    const [modeId, setModeId] = useState(0);
     const [dryRun, setDryRun] = useState(false);
 
     const { data: modes = [] } = useModes(apiClient);
     const mutation = useExecuteRun(apiClient);
 
     const handleExecute = useCallback(() => {
-        if (!reviewedDate || !mode) {
+        if (!reviewedDate || !modeId) {
             onError?.({
                 message: 'Please select both Reviewed Date and Mode',
                 runId: 0,
@@ -36,12 +36,12 @@ export function RunExecutor({ onSuccess, onError }: RunExecutorProps) {
         }
 
         mutation.mutate(
-            { reviewedDate, mode, dryRun },
+            { reviewedDate, modeId, dryRun },
             {
                 onSuccess: (data) => {
                     onSuccess?.(data);
                     setReviewedDate('');
-                    setMode('');
+                    setModeId(0);
                     setDryRun(false);
                 },
                 onError: (error) => {
@@ -52,17 +52,17 @@ export function RunExecutor({ onSuccess, onError }: RunExecutorProps) {
                 },
             }
         );
-    }, [reviewedDate, mode, dryRun, mutation, onSuccess, onError]);
+    }, [reviewedDate, modeId, dryRun, mutation, onSuccess, onError]);
 
-    const isDisabled = mutation.isPending || !reviewedDate || !mode;
+    const isDisabled = mutation.isPending || !reviewedDate || !modeId;
 
     return (
         <>
             <RunExecutorForm
                 reviewedDate={reviewedDate}
                 onReviewedDateChange={setReviewedDate}
-                mode={mode}
-                onModeChange={setMode}
+                modeId={modeId}
+                onModeChange={setModeId}
                 modes={modes}
                 dryRun={dryRun}
                 onDryRunChange={setDryRun}
