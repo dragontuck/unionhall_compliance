@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, Download } from 'lucide-react';
 import '../styles/DataTable.css';
 
 interface Column<T> {
@@ -82,29 +82,73 @@ export function DataTable<T extends Record<string, any>>({
         );
     };
 
+    const downloadAsCSV = () => {
+        // Create CSV header
+        const headers = columns.map(col => col.label).join(',');
+
+        // Create CSV rows from sorted/filtered data
+        const rows = sortedData.map(row =>
+            columns.map(col => {
+                let value = row[col.key];
+                // If column has a render function, we need the raw value
+                // For simplicity, we'll use the string representation
+                value = String(value ?? '');
+                // Escape quotes and wrap in quotes if contains comma, quote, or newline
+                if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                    value = '"' + value.replace(/"/g, '""') + '"';
+                }
+                return value;
+            }).join(',')
+        );
+
+        // Combine headers and rows
+        const csv = [headers, ...rows].join('\n');
+
+        // Create blob and download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `table_export_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="data-table-container">
             {title && <h3 className="data-table-title">{title}</h3>}
 
             {searchableColumns.length > 0 && (
-                <div className="search-box">
-                    <Search size={18} />
-                    <input
-                        type="text"
-                        placeholder={`Search ${searchableColumns.join(', ')}...`}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
-                    />
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm('')}
-                            className="clear-search"
-                            aria-label="Clear search"
-                        >
-                            ✕
-                        </button>
-                    )}
+                <div className="search-controls">
+                    <div className="search-box">
+                        <Search size={18} />
+                        <input
+                            type="text"
+                            placeholder={`Search ${searchableColumns.join(', ')}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="clear-search"
+                                aria-label="Clear search"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={downloadAsCSV}
+                        className="datatable-download-button"
+                        aria-label="Download as CSV"
+                        title="Download table as CSV"
+                    >
+                        <Download size={14} />
+                    </button>
                 </div>
             )}
 

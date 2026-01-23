@@ -25,6 +25,27 @@ export class Container {
     }
 
     /**
+     * Update the database pool and reinitialize services
+     * Used for connection refresh
+     * @param {sql.ConnectionPool} newPool - New database connection pool
+     */
+    setPool(newPool) {
+        this.dbPool = newPool;
+        // Clear cached factory instances so they will be recreated with new pool
+        this.instances.delete('repository');
+        this.instances.delete('runRepository');
+        this.instances.delete('reportRepository');
+        this.instances.delete('reportDetailRepository');
+        this.instances.delete('reportNoteRepository');
+        this.instances.delete('modeRepository');
+        this.instances.delete('hireDataRepository');
+        this.instances.delete('runService');
+        this.instances.delete('reportService');
+        this.instances.delete('modeService');
+        this.instances.delete('hireDataService');
+    }
+
+    /**
      * Register singleton instance
      * @param {string} key - Service key
      * @param {*} instance - Service instance

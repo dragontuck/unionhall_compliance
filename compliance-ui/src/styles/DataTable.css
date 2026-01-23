@@ -13,15 +13,22 @@
   color: #333;
 }
 
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 .search-box {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
   background: #f9f9f9;
+  flex: 1;
 }
 
 .search-box svg {
@@ -36,6 +43,7 @@
   outline: none;
   font-size: 14px;
   padding: 0;
+  min-width: 200px;
 }
 
 .search-input::placeholder {
@@ -52,6 +60,32 @@
   align-items: center;
   font-size: 18px;
   transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.clear-search:hover {
+  color: #666;
+}
+
+.datatable-download-button {
+  background: none;
+  border: 1px solid #ddd;
+  color: #999;
+  cursor: pointer;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  border-radius: 4px;
+  height: fit-content;
+}
+
+.datatable-download-button:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: #999;
 }
 
 .table-wrapper {

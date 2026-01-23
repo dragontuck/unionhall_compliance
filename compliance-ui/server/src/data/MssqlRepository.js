@@ -17,6 +17,8 @@ export class MssqlRepository extends IRepository {
             throw new Error('Database pool is required');
         }
         this.pool = pool;
+        this.maxRetries = 3;
+        this.retryDelay = 100; // milliseconds
     }
 
     /**
@@ -26,14 +28,12 @@ export class MssqlRepository extends IRepository {
      * @returns {Promise<Array>} Array of records
      */
     async query(sqlQuery, params = {}) {
-        try {
+        return this._executeWithRetry(async () => {
             const request = this.pool.request();
             this._bindParameters(request, params);
             const result = await request.query(sqlQuery);
             return result.recordset || [];
-        } catch (error) {
-            throw new Error(`Query failed: ${error.message}`);
-        }
+        });
     }
 
     /**
@@ -67,14 +67,12 @@ export class MssqlRepository extends IRepository {
      * @returns {Promise<number>} Number of affected rows
      */
     async execute(sqlCommand, params = {}) {
-        try {
+        return this._executeWithRetry(async () => {
             const request = this.pool.request();
             this._bindParameters(request, params);
             const result = await request.query(sqlCommand);
             return result.rowsAffected[0] || 0;
-        } catch (error) {
-            throw new Error(`Execute failed: ${error.message}`);
-        }
+        });
     }
 
     /**
@@ -152,6 +150,53 @@ export class MssqlRepository extends IRepository {
             await this.rollbackTransaction(transaction);
             throw error;
         }
+    }
+
+    /**
+     * Helper to execute operations with retry logic
+     * Handles transient connection failures during pool refresh
+     * @private
+     * @param {Function} operation - Async operation to execute
+     * @returns {Promise<*>} Result from operation
+     */
+    async _executeWithRetry(operation) {
+        let lastError;
+
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError = error;
+
+                // Check if it's a connection-related error
+                const isConnectionError =
+                    error.message.includes('Connection is closed') ||
+                    error.message.includes('Connection timeout') ||
+                    error.message.includes('Request timeout') ||
+                    error.message.includes('ESOCKET');
+
+                if (!isConnectionError || attempt === this.maxRetries) {
+                    // Not a connection error or last attempt - throw it
+                    throw new Error(`${error.message.split(':')[0]} failed: ${error.message}`);
+                }
+
+                // Wait before retrying
+                await this._delay(this.retryDelay * attempt);
+                console.warn(`[Database] Retry attempt ${attempt}/${this.maxRetries} after connection error: ${error.message}`);
+            }
+        }
+
+        throw lastError;
+    }
+
+    /**
+     * Helper to delay execution
+     * @private
+     * @param {number} ms - Milliseconds to delay
+     * @returns {Promise<void>}
+     */
+    async _delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     /**

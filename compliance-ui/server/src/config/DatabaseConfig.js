@@ -80,3 +80,35 @@ export async function testDatabaseConnection(pool) {
         return false;
     }
 }
+
+/**
+ * Refresh database connection pool
+ * Closes existing pool and creates a new one
+ * @param {sql.ConnectionPool} pool - Current connection pool
+ * @param {Object} config - Connection configuration
+ * @returns {Promise<sql.ConnectionPool>} New connection pool
+ */
+export async function refreshDatabaseConnection(pool, config) {
+    try {
+        console.log('[Database] Refreshing connection pool...');
+
+        // Close existing connection
+        if (pool) {
+            try {
+                await pool.close();
+                console.log('[Database] Closed existing connection');
+            } catch (error) {
+                console.warn('[Database] Error closing existing connection:', error.message);
+            }
+        }
+
+        // Create new connection
+        const newPool = new sql.ConnectionPool(config);
+        await newPool.connect();
+        console.log('[Database] Connection pool refreshed successfully');
+        return newPool;
+    } catch (error) {
+        console.error('[Database] Failed to refresh connection:', error.message);
+        throw error;
+    }
+}
