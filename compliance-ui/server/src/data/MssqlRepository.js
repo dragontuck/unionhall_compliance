@@ -177,7 +177,7 @@ export class MssqlRepository extends IRepository {
 
                 if (!isConnectionError || attempt === this.maxRetries) {
                     // Not a connection error or last attempt - throw it
-                    throw new Error(`${error.message.split(':')[0]} failed: ${error.message}`);
+                    throw error;
                 }
 
                 // Wait before retrying

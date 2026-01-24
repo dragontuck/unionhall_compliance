@@ -97,7 +97,7 @@ describe('MssqlRepository', () => {
 
             await expect(repository.query('SELECT * FROM table', {}))
                 .rejects
-                .toThrow('Syntax error failed: Syntax error');
+                .toThrow('Syntax error');
 
             expect(mockRequest.query).toHaveBeenCalledTimes(1);
         });
@@ -225,7 +225,7 @@ describe('MssqlRepository', () => {
 
             await expect(repository.execute('INSERT INTO table VALUES (@id)', { id: 1 }))
                 .rejects
-                .toThrow('Constraint violation failed: Constraint violation');
+                .toThrow('Constraint violation');
         });
     });
 
