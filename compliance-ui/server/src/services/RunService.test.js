@@ -14,6 +14,7 @@ describe('RunService', () => {
     let mockReportRepo;
     let mockDetailRepo;
     let mockHireDataRepo;
+    let mockComplianceEngine;
 
     beforeEach(() => {
         mockRunRepo = {
@@ -21,6 +22,10 @@ describe('RunService', () => {
             getRunById: jest.fn(),
             createRun: jest.fn(),
             getNextRunNumber: jest.fn(),
+            beginTransaction: jest.fn(),
+            commitTransaction: jest.fn(),
+            rollbackTransaction: jest.fn(),
+            updateRunOutput: jest.fn(),
         };
 
         mockModeRepo = {
@@ -41,7 +46,18 @@ describe('RunService', () => {
             getRecentHires: jest.fn(),
         };
 
-        service = new RunService(mockRunRepo, mockModeRepo, mockReportRepo, mockDetailRepo, mockHireDataRepo);
+        mockComplianceEngine = {
+            createComplianceState: jest.fn().mockReturnValue({
+                compliance: 0,
+                directCount: 0,
+                dispatchNeeded: 0,
+                nextHireDispatch: 'N'
+            }),
+            applyHire: jest.fn(),
+            codeToStatus: jest.fn().mockReturnValue('Compliant'),
+        };
+
+        service = new RunService(mockRunRepo, mockModeRepo, mockReportRepo, mockDetailRepo, mockHireDataRepo, mockComplianceEngine);
 
         // Mock XLSX
         XLSX.utils = {
@@ -50,6 +66,25 @@ describe('RunService', () => {
             book_append_sheet: jest.fn(),
         };
         XLSX.write = jest.fn(() => Buffer.from('test'));
+
+        // Mock transaction object that can chain request().input().query()
+        const mockRequest = {
+            input: jest.fn().mockReturnThis(),
+            query: jest.fn(),
+        };
+
+        // Set up query to return default INSERT result with runId
+        mockRequest.query.mockResolvedValue({
+            recordset: [{ runId: 100 }],
+            rowsAffected: [1],
+            recordsets: [[{ runId: 100 }]]
+        });
+
+        const mockTx = {
+            request: jest.fn().mockReturnValue(mockRequest),
+        };
+
+        mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
     });
 
     describe('getAllRuns', () => {
@@ -96,27 +131,21 @@ describe('RunService', () => {
 
     describe('createRun', () => {
         it('should create a new run with generated run number', async () => {
-            mockModeRepo.getModeById.mockResolvedValue({ id: 1, name: '2To1' });
+            mockModeRepo.getModeById.mockResolvedValue({ id: 1, mode_value: 2, name: '2To1' });
             mockRunRepo.getNextRunNumber.mockResolvedValue(15);
-            mockRunRepo.createRun.mockResolvedValue(100);
 
             const result = await service.createRun({
                 modeId: 1,
                 reviewedDate: '2025-01-15',
             });
 
-            expect(result).toBe(100);
-            expect(mockRunRepo.createRun).toHaveBeenCalledWith({
-                modeId: 1,
-                reviewedDate: '2025-01-15',
-                runNumber: 15,
-                output: '',
-            });
+            expect(result.success).toBe(true);
+            expect(result.runId).toBe(100);
+            expect(mockRunRepo.getNextRunNumber).toHaveBeenCalledWith(1, '2025-01-15');
         });
 
         it('should create a new run with specified run number', async () => {
-            mockModeRepo.getModeById.mockResolvedValue({ id: 1, name: '2To1' });
-            mockRunRepo.createRun.mockResolvedValue(101);
+            mockModeRepo.getModeById.mockResolvedValue({ id: 1, mode_value: 2, name: '2To1' });
 
             const result = await service.createRun({
                 modeId: 1,
@@ -124,13 +153,9 @@ describe('RunService', () => {
                 runNumber: 20,
             });
 
-            expect(result).toBe(101);
-            expect(mockRunRepo.createRun).toHaveBeenCalledWith({
-                modeId: 1,
-                reviewedDate: '2025-01-15',
-                runNumber: 20,
-                output: '',
-            });
+            expect(result.success).toBe(true);
+            expect(result.runId).toBe(100);
+            expect(mockRunRepo.getNextRunNumber).not.toHaveBeenCalled();
         });
 
         it('should throw error if modeId missing', async () => {

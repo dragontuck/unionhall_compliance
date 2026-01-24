@@ -6,9 +6,11 @@ import { Container } from './Container.js';
 
 describe('Container (Dependency Injection)', () => {
     let container;
+    let mockPool;
 
     beforeEach(() => {
-        container = new Container();
+        mockPool = { request: jest.fn() };
+        container = new Container(mockPool);
     });
 
     describe('register', () => {
@@ -61,6 +63,81 @@ describe('Container (Dependency Injection)', () => {
             const result = container.resolve('factoryService');
             expect(result.value).toBe('created');
             expect(result.id).toBe(123);
+        });
+    });
+
+    describe('setPool', () => {
+        it('should update the database pool', () => {
+            const newPool = { request: jest.fn() };
+            container.setPool(newPool);
+
+            expect(container.dbPool).toBe(newPool);
+        });
+
+        it('should clear cached repository instances', () => {
+            const repository = { query: jest.fn() };
+            container.register('repository', repository);
+
+            expect(container.resolve('repository')).toBe(repository);
+
+            const newPool = { request: jest.fn() };
+            container.setPool(newPool);
+
+            // After setPool, repository instance should be cleared
+            expect(() => container.resolve('repository')).toThrow();
+        });
+
+        it('should clear cached service instances on pool update', () => {
+            const newPool = { request: jest.fn() };
+
+            // Register some services
+            container.register('runService', { name: 'old' });
+            container.register('reportService', { name: 'old' });
+
+            // Verify they exist
+            expect(container.resolve('runService').name).toBe('old');
+
+            // Update pool
+            container.setPool(newPool);
+
+            // Services should be cleared so they throw on resolve
+            expect(() => container.resolve('runService')).toThrow();
+            expect(() => container.resolve('reportService')).toThrow();
+        });
+
+        it('should clear all repository and service instances', () => {
+            const serviceNames = [
+                'repository',
+                'runRepository',
+                'reportRepository',
+                'reportDetailRepository',
+                'reportNoteRepository',
+                'modeRepository',
+                'hireDataRepository',
+                'runService',
+                'reportService',
+                'modeService',
+                'hireDataService'
+            ];
+
+            // Register mock services
+            serviceNames.forEach(name => {
+                container.register(name, { id: name });
+            });
+
+            // Verify all registered
+            serviceNames.forEach(name => {
+                expect(container.resolve(name).id).toBe(name);
+            });
+
+            // Update pool
+            const newPool = { request: jest.fn() };
+            container.setPool(newPool);
+
+            // All should be cleared
+            serviceNames.forEach(name => {
+                expect(() => container.resolve(name)).toThrow();
+            });
         });
     });
 });

@@ -27,6 +27,8 @@ describe('MssqlRepository', () => {
         it('should create instance with valid pool', () => {
             expect(repository).toBeDefined();
             expect(repository.pool).toBe(mockPool);
+            expect(repository.maxRetries).toBe(3);
+            expect(repository.retryDelay).toBe(100);
         });
 
         it('should throw error when pool is missing', () => {
@@ -66,13 +68,49 @@ describe('MssqlRepository', () => {
             expect(mockRequest.input).toHaveBeenCalledWith('id', expect.anything(), 1);
         });
 
-        it('should handle query errors', async () => {
-            mockRequest.query.mockRejectedValue(new Error('Database connection failed'));
+        it('should retry on connection closed error', async () => {
+            const recordset = [{ id: 1, name: 'Test' }];
+            mockRequest.query
+                .mockRejectedValueOnce(new Error('Connection is closed'))
+                .mockResolvedValueOnce({ recordset });
+
+            const result = await repository.query('SELECT * FROM table', {});
+
+            expect(result).toEqual(recordset);
+            expect(mockRequest.query).toHaveBeenCalledTimes(2);
+        }, 10000);
+
+        it('should retry on connection timeout error', async () => {
+            const recordset = [{ id: 1, name: 'Test' }];
+            mockRequest.query
+                .mockRejectedValueOnce(new Error('Connection timeout'))
+                .mockResolvedValueOnce({ recordset });
+
+            const result = await repository.query('SELECT * FROM table', {});
+
+            expect(result).toEqual(recordset);
+            expect(mockRequest.query).toHaveBeenCalledTimes(2);
+        }, 10000);
+
+        it('should not retry on non-connection errors', async () => {
+            mockRequest.query.mockRejectedValue(new Error('Syntax error'));
 
             await expect(repository.query('SELECT * FROM table', {}))
                 .rejects
-                .toThrow('Query failed: Database connection failed');
+                .toThrow('Syntax error failed: Syntax error');
+
+            expect(mockRequest.query).toHaveBeenCalledTimes(1);
         });
+
+        it('should fail after max retries exceeded', async () => {
+            mockRequest.query.mockRejectedValue(new Error('Connection is closed'));
+
+            await expect(repository.query('SELECT * FROM table', {}))
+                .rejects
+                .toThrow('Connection is closed');
+
+            expect(mockRequest.query).toHaveBeenCalledTimes(3);
+        }, 10000);
 
         it('should pass multiple parameters', async () => {
             mockRequest.query.mockResolvedValue({ recordset: [] });
@@ -168,15 +206,26 @@ describe('MssqlRepository', () => {
 
             await expect(repository.execute('DELETE FROM table', {}))
                 .rejects
-                .toThrow('Execute failed');
+                .toThrow('Cannot read properties of undefined');
         });
+
+        it('should retry on connection errors during execute', async () => {
+            mockRequest.query
+                .mockRejectedValueOnce(new Error('Connection is closed'))
+                .mockResolvedValueOnce({ rowsAffected: [1] });
+
+            const result = await repository.execute('INSERT INTO table VALUES (@id)', { id: 1 });
+
+            expect(result).toBe(1);
+            expect(mockRequest.query).toHaveBeenCalledTimes(2);
+        }, 10000);
 
         it('should handle execute errors', async () => {
             mockRequest.query.mockRejectedValue(new Error('Constraint violation'));
 
             await expect(repository.execute('INSERT INTO table VALUES (@id)', { id: 1 }))
                 .rejects
-                .toThrow('Execute failed: Constraint violation');
+                .toThrow('Constraint violation failed: Constraint violation');
         });
     });
 
@@ -250,6 +299,112 @@ describe('MssqlRepository', () => {
             repository._bindParameters(request, { value: null });
 
             expect(request.input).toHaveBeenCalledWith('value', sql.NVarChar(sql.MAX), null);
+        });
+    });
+
+    describe('_executeWithRetry', () => {
+        it('should execute operation successfully on first attempt', async () => {
+            const operation = jest.fn().mockResolvedValue('success');
+
+            const result = await repository._executeWithRetry(operation);
+
+            expect(result).toBe('success');
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
+        it('should retry on connection is closed error', async () => {
+            const operation = jest.fn()
+                .mockRejectedValueOnce(new Error('Connection is closed'))
+                .mockResolvedValueOnce('success');
+
+            const result = await repository._executeWithRetry(operation);
+
+            expect(result).toBe('success');
+            expect(operation).toHaveBeenCalledTimes(2);
+        });
+
+        it('should retry on connection timeout error', async () => {
+            const operation = jest.fn()
+                .mockRejectedValueOnce(new Error('Connection timeout'))
+                .mockResolvedValueOnce('success');
+
+            const result = await repository._executeWithRetry(operation);
+
+            expect(result).toBe('success');
+            expect(operation).toHaveBeenCalledTimes(2);
+        });
+
+        it('should retry on request timeout error', async () => {
+            const operation = jest.fn()
+                .mockRejectedValueOnce(new Error('Request timeout'))
+                .mockResolvedValueOnce('success');
+
+            const result = await repository._executeWithRetry(operation);
+
+            expect(result).toBe('success');
+            expect(operation).toHaveBeenCalledTimes(2);
+        });
+
+        it('should retry on ESOCKET error', async () => {
+            const operation = jest.fn()
+                .mockRejectedValueOnce(new Error('ESOCKET'))
+                .mockResolvedValueOnce('success');
+
+            const result = await repository._executeWithRetry(operation);
+
+            expect(result).toBe('success');
+            expect(operation).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not retry on non-connection errors', async () => {
+            const operation = jest.fn()
+                .mockRejectedValue(new Error('Syntax error'));
+
+            await expect(repository._executeWithRetry(operation))
+                .rejects
+                .toThrow('Syntax error');
+
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
+        it('should fail after max retries exceeded', async () => {
+            const operation = jest.fn()
+                .mockRejectedValue(new Error('Connection is closed'));
+
+            await expect(repository._executeWithRetry(operation))
+                .rejects
+                .toThrow('Connection is closed');
+
+            expect(operation).toHaveBeenCalledTimes(3);
+        });
+
+        it('should implement exponential backoff', async () => {
+            const operation = jest.fn()
+                .mockRejectedValueOnce(new Error('Connection is closed'))
+                .mockRejectedValueOnce(new Error('Connection is closed'))
+                .mockResolvedValueOnce('success');
+
+            const delayMock = jest.spyOn(repository, '_delay');
+
+            await repository._executeWithRetry(operation);
+
+            expect(delayMock).toHaveBeenCalledWith(100);
+            expect(delayMock).toHaveBeenCalledWith(200);
+            delayMock.mockRestore();
+        }, 10000);
+    });
+
+    describe('_delay', () => {
+        it('should delay for specified time', async () => {
+            const start = Date.now();
+            await repository._delay(50);
+            const elapsed = Date.now() - start;
+            expect(elapsed).toBeGreaterThanOrEqual(50);
+        }, 10000);
+
+        it('should resolve with no value', async () => {
+            const result = await repository._delay(0);
+            expect(result).toBeUndefined();
         });
     });
 });

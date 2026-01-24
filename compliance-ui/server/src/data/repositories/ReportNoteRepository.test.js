@@ -6,15 +6,29 @@ import { ReportNoteRepository } from './ReportNoteRepository.js';
 
 describe('ReportNoteRepository', () => {
     let repository;
-    let mockRepo;
+    let mockPool;
+    let mockRequest;
 
     beforeEach(() => {
-        mockRepo = {
+        mockRequest = {
+            input: jest.fn().mockReturnThis(),
             query: jest.fn(),
-            execute: jest.fn(),
         };
 
-        repository = new ReportNoteRepository(mockRepo);
+        mockPool = {
+            request: jest.fn().mockReturnValue(mockRequest),
+        };
+
+        repository = new ReportNoteRepository(mockPool);
+
+        // Spy on the methods so we can mock their return values
+        jest.spyOn(repository, 'query');
+        jest.spyOn(repository, 'queryOne');
+        jest.spyOn(repository, 'execute');
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     describe('getNotesByReport', () => {
@@ -23,19 +37,19 @@ describe('ReportNoteRepository', () => {
                 { note: 'Note 1', createdDate: '2025-01-15', createdBy: 'admin' },
                 { note: 'Note 2', createdDate: '2025-01-16', createdBy: 'user1' },
             ];
-            mockRepo.query.mockResolvedValue(notes);
+            repository.query.mockResolvedValue(notes);
 
             const result = await repository.getNotesByReport(10);
 
             expect(result).toEqual(notes);
-            expect(mockRepo.query).toHaveBeenCalledWith(
+            expect(repository.query).toHaveBeenCalledWith(
                 expect.stringContaining('CMP_ReportNotes'),
                 { reportId: 10 }
             );
         });
 
         it('should return empty array when no notes found', async () => {
-            mockRepo.query.mockResolvedValue([]);
+            repository.query.mockResolvedValue([]);
 
             const result = await repository.getNotesByReport(999);
 
@@ -44,11 +58,11 @@ describe('ReportNoteRepository', () => {
 
         it('should order notes by date', async () => {
             const notes = [];
-            mockRepo.query.mockResolvedValue(notes);
+            repository.query.mockResolvedValue(notes);
 
             await repository.getNotesByReport(10);
 
-            const query = mockRepo.query.mock.calls[0][0];
+            const query = repository.query.mock.calls[0][0];
             expect(query).toContain('ORDER BY CreatedDate');
         });
     });
@@ -58,19 +72,19 @@ describe('ReportNoteRepository', () => {
             const notes = [
                 { note: 'Note A', createdDate: '2025-01-15', createdBy: 'admin' },
             ];
-            mockRepo.query.mockResolvedValue(notes);
+            repository.query.mockResolvedValue(notes);
 
             const result = await repository.getNotesByEmployer('EMP001');
 
             expect(result).toEqual(notes);
-            expect(mockRepo.query).toHaveBeenCalledWith(
+            expect(repository.query).toHaveBeenCalledWith(
                 expect.stringContaining('CMP_ReportNotes'),
                 { employerId: 'EMP001' }
             );
         });
 
         it('should return empty array when employer has no notes', async () => {
-            mockRepo.query.mockResolvedValue([]);
+            repository.query.mockResolvedValue([]);
 
             const result = await repository.getNotesByEmployer('EMP999');
 
@@ -78,18 +92,18 @@ describe('ReportNoteRepository', () => {
         });
 
         it('should filter by EmployerId', async () => {
-            mockRepo.query.mockResolvedValue([]);
+            repository.query.mockResolvedValue([]);
 
             await repository.getNotesByEmployer('EMP001');
 
-            const query = mockRepo.query.mock.calls[0][0];
+            const query = repository.query.mock.calls[0][0];
             expect(query).toContain('n.EmployerId = @employerId');
         });
     });
 
     describe('createNote', () => {
         it('should create a new note', async () => {
-            mockRepo.execute.mockResolvedValue(1);
+            repository.execute.mockResolvedValue(1);
 
             const result = await repository.createNote({
                 reportId: 10,
@@ -99,11 +113,11 @@ describe('ReportNoteRepository', () => {
             });
 
             expect(result).toBe(1);
-            expect(mockRepo.execute).toHaveBeenCalled();
+            expect(repository.execute).toHaveBeenCalled();
         });
 
         it('should pass all note data to execute', async () => {
-            mockRepo.execute.mockResolvedValue(1);
+            repository.execute.mockResolvedValue(1);
 
             const noteData = {
                 reportId: 10,
@@ -114,14 +128,14 @@ describe('ReportNoteRepository', () => {
 
             await repository.createNote(noteData);
 
-            expect(mockRepo.execute).toHaveBeenCalledWith(
+            expect(repository.execute).toHaveBeenCalledWith(
                 expect.stringContaining('CMP_ReportNotes'),
                 expect.any(Object)
             );
         });
 
         it('should handle different note data', async () => {
-            mockRepo.execute.mockResolvedValue(1);
+            repository.execute.mockResolvedValue(1);
 
             const noteData = {
                 reportId: 42,
@@ -133,7 +147,7 @@ describe('ReportNoteRepository', () => {
             const result = await repository.createNote(noteData);
 
             expect(result).toBe(1);
-            expect(mockRepo.execute).toHaveBeenCalled();
+            expect(repository.execute).toHaveBeenCalled();
         });
     });
 });

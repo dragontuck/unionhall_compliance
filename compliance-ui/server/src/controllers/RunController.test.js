@@ -98,14 +98,18 @@ describe('RunController', () => {
                 reviewedDate: '2025-01-15',
                 runNumber: '20',
             };
-            mockRunService.createRun.mockResolvedValue(100);
+            mockRunService.createRun.mockResolvedValue({
+                success: true,
+                runId: 100,
+                message: 'Run executed successfully with ID: 100'
+            });
 
             await controller.createRun(req, res);
 
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
                 id: 100,
-                message: 'Run created successfully',
+                message: 'Run executed successfully with ID: 100',
             });
             expect(mockRunService.createRun).toHaveBeenCalledWith({
                 modeId: 1,
@@ -119,7 +123,11 @@ describe('RunController', () => {
                 modeId: '1',
                 reviewedDate: '2025-01-15',
             };
-            mockRunService.createRun.mockResolvedValue(101);
+            mockRunService.createRun.mockResolvedValue({
+                success: true,
+                runId: 101,
+                message: 'Run executed successfully with ID: 101'
+            });
 
             await controller.createRun(req, res);
 
