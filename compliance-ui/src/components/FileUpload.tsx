@@ -106,7 +106,7 @@ export function FileUpload({ onSuccess, onError }: FileUploadProps) {
 
             {mutation.isSuccess && (
                 <div className="success-message">
-                    <strong>Success!</strong> {mutation.data.rowsImported} rows imported
+                    <strong>Success!</strong> {mutation.data.rowsImported} rows processed.
                 </div>
             )}
         </div>

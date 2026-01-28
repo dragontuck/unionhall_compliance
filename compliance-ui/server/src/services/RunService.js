@@ -272,8 +272,9 @@ export class RunService {
         const detailsSheet = XLSX.utils.json_to_sheet(details);
         XLSX.utils.book_append_sheet(wb, detailsSheet, 'Detail');
 
-        // Reports sheet
-        const reportsSheet = XLSX.utils.json_to_sheet(reports);
+        // Reports sheet - remove id and runid properties
+        const filteredReports = reports.map(({ id, runId, ...rest }) => rest);
+        const reportsSheet = XLSX.utils.json_to_sheet(filteredReports);
         XLSX.utils.book_append_sheet(wb, reportsSheet, 'Report');
 
         // Last 4 sheet

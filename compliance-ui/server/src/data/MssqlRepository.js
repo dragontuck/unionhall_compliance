@@ -173,7 +173,14 @@ export class MssqlRepository extends IRepository {
                     error.message.includes('Connection is closed') ||
                     error.message.includes('Connection timeout') ||
                     error.message.includes('Request timeout') ||
-                    error.message.includes('ESOCKET');
+                    error.message.includes('ESOCKET') ||
+                    error.message.includes('ETIMEDOUT') ||
+                    error.message.includes('EHOSTUNREACH') ||
+                    error.message.includes('ECONNREFUSED') ||
+                    error.message.includes('Connection terminated') ||
+                    error.code === 'ESOCKET' ||
+                    error.code === 'ETIMEDOUT' ||
+                    error.code === 'ECONNREFUSED';
 
                 if (!isConnectionError || attempt === this.maxRetries) {
                     // Not a connection error or last attempt - throw it

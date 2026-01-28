@@ -31,18 +31,12 @@ export class Container {
      */
     setPool(newPool) {
         this.dbPool = newPool;
-        // Clear cached factory instances so they will be recreated with new pool
-        this.instances.delete('repository');
-        this.instances.delete('runRepository');
-        this.instances.delete('reportRepository');
-        this.instances.delete('reportDetailRepository');
-        this.instances.delete('reportNoteRepository');
-        this.instances.delete('modeRepository');
-        this.instances.delete('hireDataRepository');
-        this.instances.delete('runService');
-        this.instances.delete('reportService');
-        this.instances.delete('modeService');
-        this.instances.delete('hireDataService');
+        // Clear ALL cached instances - repositories, services, everything
+        // This forces complete recreation of the entire dependency tree with the new pool
+        this.instances.clear();
+        // Reinitialize all services with the new pool
+        this.initializeDefaultServices();
+        console.log('[Container] All services reinitialized with new database pool');
     }
 
     /**

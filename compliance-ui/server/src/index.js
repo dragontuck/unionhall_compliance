@@ -8,26 +8,29 @@ import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { createConnectionConfig, initializeDatabase, closeDatabase, refreshDatabaseConnection } from './config/DatabaseConfig.js';
+import { createConnectionConfig, initializeDatabase, closeDatabase, validateDatabaseConnection, setupPoolEventHandlers } from './config/DatabaseConfig.js';
 import { createApplication } from './Application.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 const distPath = path.join(__dirname, '../compliance-ui/dist');
-const DB_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const DB_VALIDATION_INTERVAL = 30 * 1000; // 30 seconds for connection validation
 
 /**
  * Main startup function
  */
 async function start() {
     let dbPool = null;
-    let refreshInterval = null;
+    let validationInterval = null;
 
     try {
         // Initialize database
         console.log('[Startup] Initializing database connection...');
         const dbConfig = createConnectionConfig(process.env);
         dbPool = await initializeDatabase(dbConfig);
+
+        // Set up pool event handlers for monitoring
+        setupPoolEventHandlers(dbPool);
 
         // Create application
         console.log('[Startup] Creating application...');
@@ -39,25 +42,29 @@ async function start() {
             console.log('[Server] Environment:', process.env.NODE_ENV || 'development');
         });
 
-        // Set up periodic database connection refresh (every 5 minutes)
-        console.log('[Database] Setting up connection refresh interval (5 minutes)...');
-        refreshInterval = setInterval(async () => {
+        // Set up periodic database connection validation (every 30 seconds)
+        // Validation checks pool health and automatically reconnects if needed
+        console.log('[Database] Setting up connection validation interval (30 seconds)...');
+        validationInterval = setInterval(async () => {
             try {
-                const newPool = await refreshDatabaseConnection(dbPool, dbConfig);
-                dbPool = newPool;
-                container.setPool(newPool);
-                console.log('[Database] Connection refresh completed successfully');
+                const validatedPool = await validateDatabaseConnection(dbPool, dbConfig);
+                if (validatedPool !== dbPool) {
+                    // Pool was reconnected
+                    dbPool = validatedPool;
+                    setupPoolEventHandlers(validatedPool);
+                    container.setPool(validatedPool);
+                    console.log('[Database] Connection pool was restored');
+                }
             } catch (error) {
-                console.error('[Database] Connection refresh failed:', error.message);
-                // Log the error but continue running - the next refresh will retry
+                console.error('[Database] Connection validation failed:', error.message);
             }
-        }, DB_REFRESH_INTERVAL);
+        }, DB_VALIDATION_INTERVAL);
 
         // Graceful shutdown
         process.on('SIGINT', async () => {
             console.log('[Shutdown] Received SIGINT signal');
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
+            if (validationInterval) {
+                clearInterval(validationInterval);
             }
             await closeDatabase(dbPool);
             process.exit(0);
@@ -65,8 +72,8 @@ async function start() {
 
         process.on('SIGTERM', async () => {
             console.log('[Shutdown] Received SIGTERM signal');
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
+            if (validationInterval) {
+                clearInterval(validationInterval);
             }
             await closeDatabase(dbPool);
             process.exit(0);
@@ -74,8 +81,8 @@ async function start() {
 
     } catch (error) {
         console.error('[Startup] Fatal error:', error.message);
-        if (refreshInterval) {
-            clearInterval(refreshInterval);
+        if (validationInterval) {
+            clearInterval(validationInterval);
         }
         if (dbPool) {
             await closeDatabase(dbPool);

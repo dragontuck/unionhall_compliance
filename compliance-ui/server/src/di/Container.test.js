@@ -67,6 +67,11 @@ describe('Container (Dependency Injection)', () => {
     });
 
     describe('setPool', () => {
+        beforeEach(() => {
+            // Initialize default services for pool update tests
+            container.initializeDefaultServices();
+        });
+
         it('should update the database pool', () => {
             const newPool = { request: jest.fn() };
             container.setPool(newPool);
@@ -74,38 +79,33 @@ describe('Container (Dependency Injection)', () => {
             expect(container.dbPool).toBe(newPool);
         });
 
-        it('should clear cached repository instances', () => {
-            const repository = { query: jest.fn() };
-            container.register('repository', repository);
-
-            expect(container.resolve('repository')).toBe(repository);
+        it('should reinitialize repository with new pool', () => {
+            const oldRepository = container.resolve('repository');
 
             const newPool = { request: jest.fn() };
             container.setPool(newPool);
 
-            // After setPool, repository instance should be cleared
-            expect(() => container.resolve('repository')).toThrow();
+            // After setPool, repository should be recreated with new pool
+            const newRepository = container.resolve('repository');
+            expect(newRepository).not.toBe(oldRepository);
+            expect(newRepository.pool).toBe(newPool);
         });
 
-        it('should clear cached service instances on pool update', () => {
+        it('should reinitialize all services on pool update', () => {
+            const oldRunService = container.resolve('runService');
+            const oldReportService = container.resolve('reportService');
+
             const newPool = { request: jest.fn() };
-
-            // Register some services
-            container.register('runService', { name: 'old' });
-            container.register('reportService', { name: 'old' });
-
-            // Verify they exist
-            expect(container.resolve('runService').name).toBe('old');
-
-            // Update pool
             container.setPool(newPool);
 
-            // Services should be cleared so they throw on resolve
-            expect(() => container.resolve('runService')).toThrow();
-            expect(() => container.resolve('reportService')).toThrow();
+            // Services should be recreated with new pool
+            const newRunService = container.resolve('runService');
+            const newReportService = container.resolve('reportService');
+            expect(newRunService).not.toBe(oldRunService);
+            expect(newReportService).not.toBe(oldReportService);
         });
 
-        it('should clear all repository and service instances', () => {
+        it('should reinitialize all repository and service instances', () => {
             const serviceNames = [
                 'repository',
                 'runRepository',
@@ -120,23 +120,20 @@ describe('Container (Dependency Injection)', () => {
                 'hireDataService'
             ];
 
-            // Register mock services
+            // Get old instances
+            const oldInstances = new Map();
             serviceNames.forEach(name => {
-                container.register(name, { id: name });
-            });
-
-            // Verify all registered
-            serviceNames.forEach(name => {
-                expect(container.resolve(name).id).toBe(name);
+                oldInstances.set(name, container.resolve(name));
             });
 
             // Update pool
             const newPool = { request: jest.fn() };
             container.setPool(newPool);
 
-            // All should be cleared
+            // All should be recreated (different instances)
             serviceNames.forEach(name => {
-                expect(() => container.resolve(name)).toThrow();
+                const newInstance = container.resolve(name);
+                expect(newInstance).not.toBe(oldInstances.get(name));
             });
         });
     });

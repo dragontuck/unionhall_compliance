@@ -72,7 +72,7 @@ export class HireDataController {
         const result = await this.hireDataService.importHires(rows, DataConverters);
 
         res.json({
-            message: `Import completed: ${result.successCount} rows inserted`,
+            message: `Import completed: ${result.successCount} rows processed`,
             rowsImported: result.successCount,
             rowsFailed: result.failCount,
             errors: result.errors.length > 0 ? result.errors : undefined
