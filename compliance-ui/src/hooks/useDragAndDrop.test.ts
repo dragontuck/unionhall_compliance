@@ -98,7 +98,10 @@ describe('useDragAndDrop', () => {
                 0: file,
                 length: 1,
                 item: (index: number) => (index === 0 ? file : null),
-            } as FileList;
+                [Symbol.iterator]: function* () {
+                    yield file;
+                },
+            } as unknown as FileList;
 
             const dropEvent = new DragEvent('drop', {
                 bubbles: true,

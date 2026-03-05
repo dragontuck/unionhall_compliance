@@ -3,7 +3,7 @@
  * Single Responsibility Principle: Only manages local storage
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
     const [storedValue, setStoredValue] = useState<T>(() => {

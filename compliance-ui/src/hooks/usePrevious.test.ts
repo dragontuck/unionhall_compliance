@@ -64,7 +64,7 @@ describe('usePrevious', () => {
 
         expect(result.current).toBeUndefined();
 
-        rerender({ value: 'something' });
+        rerender({ value: 'something' } as any);
         expect(result.current).toBeNull();
 
         rerender({ value: null });
@@ -79,7 +79,7 @@ describe('usePrevious', () => {
 
         expect(result.current).toBeUndefined();
 
-        rerender({ value: 'something' });
+        rerender({ value: 'something' } as any);
         expect(result.current).toBeUndefined();
 
         rerender({ value: undefined });

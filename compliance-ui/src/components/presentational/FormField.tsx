@@ -6,11 +6,11 @@
 export interface FormFieldProps {
     label: string;
     id: string;
-    disabled: boolean;
+    disabled?: boolean;
     children: React.ReactNode;
 }
 
-export function FormField({ label, id, disabled, children }: FormFieldProps) {
+export function FormField({ label, id, children }: FormFieldProps) {
     return (
         <div className="form-group">
             <label htmlFor={id}>{label}</label>

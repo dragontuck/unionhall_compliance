@@ -4,8 +4,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { HireData, RecentHireData } from '../../types';
-import type { IApiClient } from '../../services/interfaces/IApiClient';
+import type { IApiClient } from '../services/interfaces/IApiClient';
 
 export function useRawHireData(
     apiClient: IApiClient,

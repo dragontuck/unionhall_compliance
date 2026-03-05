@@ -100,7 +100,7 @@ describe('RunExecutor Component', () => {
         };
 
         mockMutation = {
-            mutate: vi.fn((params, { onSuccess, onError }) => { }),
+            mutate: vi.fn((_, { }) => { }),
             isPending: false,
             isError: false,
             isSuccess: false,
@@ -204,9 +204,8 @@ describe('RunExecutor Component', () => {
 
         it('should show error when required fields are missing', async () => {
             const onError = vi.fn();
-            const user = userEvent.setup();
 
-            mockMutation.mutate = vi.fn((params, { onError: onErrorCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onError: onErrorCallback }) => {
                 onErrorCallback(new Error('Validation failed'));
             });
 
@@ -288,7 +287,7 @@ describe('RunExecutor Component', () => {
                 dryRun: false,
             };
 
-            mockMutation.mutate = vi.fn((params, { onSuccess: onSuccessCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onSuccess: onSuccessCallback }) => {
                 onSuccessCallback(successData);
             });
 
@@ -313,12 +312,12 @@ describe('RunExecutor Component', () => {
         });
 
         it('should clear form fields after successful execution', async () => {
-            mockMutation.mutate = vi.fn((params, { onSuccess: onSuccessCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onSuccess: onSuccessCallback }) => {
                 onSuccessCallback({ message: 'Success', runId: 123 });
             });
 
             const user = userEvent.setup();
-            const { rerender } = render(
+            render(
                 <RunExecutor />,
                 { wrapper: createWrapper() }
             );
@@ -357,7 +356,7 @@ describe('RunExecutor Component', () => {
             const onError = vi.fn();
             const error = new Error('Connection failed');
 
-            mockMutation.mutate = vi.fn((params, { onError: onErrorCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onError: onErrorCallback }) => {
                 onErrorCallback(error);
             });
 

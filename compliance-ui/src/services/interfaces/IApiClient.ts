@@ -23,6 +23,7 @@ export interface IApiClient {
 
     // Import
     importHireData(file: File): Promise<{ message: string; rowsImported: number }>;
+    importContractorSnapshots(file: File): Promise<{ message: string; rowsImported: number }>;
 
     // Reports
     getReports(filters?: {

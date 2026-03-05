@@ -116,7 +116,7 @@ describe('fileUtils', () => {
 
         it('should reject on file read error', async () => {
             const file = new File(['test'], 'test.csv', { type: 'text/csv' });
-            vi.spyOn(FileReader.prototype, 'readAsText').mockImplementation(function () {
+            vi.spyOn(FileReader.prototype, 'readAsText').mockImplementation(function (this: FileReader) {
                 const error = new ProgressEvent('error');
                 setTimeout(() => {
                     this.onerror?.(error as any);

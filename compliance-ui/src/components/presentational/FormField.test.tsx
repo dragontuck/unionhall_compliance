@@ -172,8 +172,8 @@ describe('FormField Component', () => {
         });
 
         it('should support screen readers', () => {
-            const { container } = render(
-                <FormField label="Accessible Field" id="accessible" disabled={false}>
+            render(
+                <FormField label="Accessible Field" id="accessible">
                     <input type="text" id="accessible" />
                 </FormField>
             );

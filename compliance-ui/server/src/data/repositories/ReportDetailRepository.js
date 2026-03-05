@@ -54,7 +54,7 @@ export class ReportDetailRepository extends MssqlRepository {
                 d.contractorName, 
                 d.memberName, 
                 d.iaNumber, 
-                d.startDate, 
+                CONVERT(nvarchar, d.startDate, 101) as startDate, 
                 d.hireType, 
                 d.complianceStatus, 
                 d.directCount, 
@@ -140,7 +140,7 @@ export class ReportDetailRepository extends MssqlRepository {
                 FROM Detail h JOIN Contractors c 
                 ON c.EmployerId = h.EmployerId AND c.ContractorId = h.ContractorID
             ) 
-            SELECT employerId, contractorId, contractorName, memberName, iaNumber, startDate, hireType, 
+            SELECT employerId, contractorId, contractorName, memberName, iaNumber, CONVERT(nvarchar, startDate, 101) as startDate, hireType, 
                    complianceStatus, directCount, dispatchNeeded, nextHireDispatch, 
                    CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate, RN as [Order #]
             FROM Ranked 

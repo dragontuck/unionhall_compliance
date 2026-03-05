@@ -21,7 +21,7 @@ export class HireDataRepository extends MssqlRepository {
         const params = {};
 
         if (filters.reviewedDate) {
-            query += ' AND ReviewedDate <= @reviewedDate';
+            query += ' AND Convert(date, ReviewedDate) <= Convert(date, @reviewedDate)';
             params.reviewedDate = filters.reviewedDate;
         }
 
@@ -36,23 +36,16 @@ export class HireDataRepository extends MssqlRepository {
      */
     async getRecentHires(runId) {
         return this.query(`
-            SELECT 
-                employerId, 
-                ContractorID AS contractorId, 
-                contractorName, 
-                memberName, 
-                iaNumber, 
-                startDate, 
-                hireType, 
-                CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate 
-            FROM dbo.CMP_HireData 
-            WHERE CAST(ReviewedDate AS DATE) = (
-                SELECT CAST(ReviewedDate AS DATE) AS ReviewedDate
-                FROM dbo.CMP_Runs
-                WHERE id = @runId
-            ) 
-            ORDER BY StartDate, ReviewedDate, ContractorName
-        `, { runId });
+        select 
+            ContractorName as [Contractor Name], 
+            MemberName as [Member Name], 
+            IANumber as [IA Number], 
+            CONVERT(nvarchar, startDate, 101) as [Start Date], 
+            hireType as [Hire Type], 
+            CONVERT(nvarchar, ReviewedDate, 25) as [Reviewed Date],
+            ComplianceStatus as [Compliance Status], 
+            DispatchNeeded as [Dispatch Needed] 
+        from [dbo].[CMP_ReportDetails] where RunID = @runId`, { runId });
     }
 
     /**

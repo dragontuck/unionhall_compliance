@@ -4,8 +4,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ComplianceRun } from '../../types';
-import type { IApiClient } from '../../services/interfaces/IApiClient';
+import type { IApiClient } from '../services/interfaces/IApiClient';
 
 export interface ExecuteRunParams {
     reviewedDate: string;
@@ -52,14 +51,23 @@ export function useImportHireData(apiClient: IApiClient) {
 }
 
 /**
+ * useImportContractorSnapshots - Mutation hook for importing contractor snapshots
+ */
+export function useImportContractorSnapshots(apiClient: IApiClient) {
+    return useMutation({
+        mutationFn: (file: File) => apiClient.importContractorSnapshots(file),
+    });
+}
+
+/**
  * useUpdateComplianceReport - Mutation hook for updating compliance reports
  */
 export function useUpdateComplianceReport(apiClient: IApiClient) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ reportDetailId, updates }) =>
-            apiClient.updateComplianceReport(reportDetailId, updates),
+        mutationFn: (params: { reportDetailId: number; updates: { status: string; notes?: string } }) =>
+            apiClient.updateComplianceReport(params.reportDetailId, params.updates),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['reportDetails'] });
             queryClient.invalidateQueries({ queryKey: ['reports'] });

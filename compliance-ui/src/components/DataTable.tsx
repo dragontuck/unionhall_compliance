@@ -92,12 +92,12 @@ export function DataTable<T extends Record<string, any>>({
                 let value = row[col.key];
                 // If column has a render function, we need the raw value
                 // For simplicity, we'll use the string representation
-                value = String(value ?? '');
+                let stringValue = String(value ?? '');
                 // Escape quotes and wrap in quotes if contains comma, quote, or newline
-                if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                    value = '"' + value.replace(/"/g, '""') + '"';
+                if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                    stringValue = '"' + stringValue.replace(/"/g, '""') + '"';
                 }
-                return value;
+                return stringValue;
             }).join(',')
         );
 

@@ -12,10 +12,12 @@ import { ReportDetailRepository } from '../data/repositories/ReportDetailReposit
 import { ReportNoteRepository } from '../data/repositories/ReportNoteRepository.js';
 import { ModeRepository } from '../data/repositories/ModeRepository.js';
 import { HireDataRepository } from '../data/repositories/HireDataRepository.js';
+import { ContractorSnapshotRepository } from '../data/repositories/ContractorSnapshotRepository.js';
 import { RunService } from '../services/RunService.js';
 import { ReportService } from '../services/ReportService.js';
 import { ModeService } from '../services/ModeService.js';
 import { HireDataService } from '../services/HireDataService.js';
+import { ContractorSnapshotService } from '../services/ContractorSnapshotService.js';
 import { ComplianceEngine } from '../services/compliance-engine.js';
 
 export class Container {
@@ -92,6 +94,7 @@ export class Container {
         this.registerFactory('reportNoteRepository', (c) => new ReportNoteRepository(this.dbPool));
         this.registerFactory('modeRepository', (c) => new ModeRepository(this.dbPool));
         this.registerFactory('hireDataRepository', (c) => new HireDataRepository(this.dbPool));
+        this.registerFactory('contractorSnapshotRepository', (c) => new ContractorSnapshotRepository(this.dbPool));
 
         // Business logic
         this.registerFactory('complianceEngine', (c) => new ComplianceEngine());
@@ -104,7 +107,8 @@ export class Container {
                 c.resolve('reportRepository'),
                 c.resolve('reportDetailRepository'),
                 c.resolve('hireDataRepository'),
-                c.resolve('complianceEngine')
+                c.resolve('complianceEngine'),
+                c.resolve('contractorSnapshotRepository')
             )
         );
 
@@ -122,6 +126,10 @@ export class Container {
 
         this.registerFactory('hireDataService', (c) =>
             new HireDataService(c.resolve('hireDataRepository'))
+        );
+
+        this.registerFactory('contractorSnapshotService', (c) =>
+            new ContractorSnapshotService(c.resolve('contractorSnapshotRepository'))
         );
     }
 
@@ -155,6 +163,14 @@ export class Container {
      */
     getHireDataService() {
         return this.resolve('hireDataService');
+    }
+
+    /**
+     * Get contractor snapshot service
+     * @returns {ContractorSnapshotService} Contractor snapshot service
+     */
+    getContractorSnapshotService() {
+        return this.resolve('contractorSnapshotService');
     }
 
     /**

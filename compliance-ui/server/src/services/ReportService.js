@@ -15,7 +15,7 @@ export class ReportService {
      * Get all reports with optional filtering
      * @param {Object} filters - Filter criteria
      * @param {number} limit - Maximum records
-     * @returns {Promise<Array>} Filtered reports
+     * @returns {Promise<Array>} Filtered reports with contractor snapshot fields (LastWedReported, SnapshotWed, CompanyType)
      */
     async getReports(filters = {}, limit = 500) {
         return this.reportRepo.getReports(filters, limit);
@@ -24,7 +24,7 @@ export class ReportService {
     /**
      * Get reports for a run
      * @param {number} runId - Run ID
-     * @returns {Promise<Array>} Reports with summary data
+     * @returns {Promise<Array>} Reports with summary data and contractor snapshot fields (LastWedReported, SnapshotWed, CompanyType)
      */
     async getReportsByRun(runId) {
         return this.reportRepo.getReportsByRun(runId);
@@ -33,7 +33,7 @@ export class ReportService {
     /**
      * Get report by ID
      * @param {number} reportId - Report ID
-     * @returns {Promise<Object>} Report data with notes count
+     * @returns {Promise<Object>} Report data with notes count and contractor snapshot fields (LastWedReported, SnapshotWed, CompanyType)
      */
     async getReportById(reportId) {
         const report = await this.reportRepo.getReportById(reportId);

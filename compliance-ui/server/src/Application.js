@@ -16,12 +16,14 @@ import { RunController } from './controllers/RunController.js';
 import { ReportController } from './controllers/ReportController.js';
 import { ModeController } from './controllers/ModeController.js';
 import { HireDataController } from './controllers/HireDataController.js';
+import { ContractorSnapshotController } from './controllers/ContractorSnapshotController.js';
 import {
     defineHealthRoutes,
     defineRunRoutes,
     defineReportRoutes,
     defineModeRoutes,
-    defineHireDataRoutes
+    defineHireDataRoutes,
+    defineContractorSnapshotRoutes
 } from './routes/index.js';
 
 /**
@@ -70,6 +72,7 @@ export function createApplication(dbPool, distPath) {
     const reportController = new ReportController(container.getReportService());
     const modeController = new ModeController(container.getModeService());
     const hireDataController = new HireDataController(container.getHireDataService());
+    const contractorSnapshotController = new ContractorSnapshotController(container.getContractorSnapshotService());
 
     // Define routes
     defineHealthRoutes(apiRouter);
@@ -77,6 +80,7 @@ export function createApplication(dbPool, distPath) {
     defineReportRoutes(apiRouter, reportController);
     defineModeRoutes(apiRouter, modeController);
     defineHireDataRoutes(apiRouter, hireDataController, upload);
+    defineContractorSnapshotRoutes(apiRouter, contractorSnapshotController, upload);
 
     // Mount API routes
     app.use('/api', apiRouter);

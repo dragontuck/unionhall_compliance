@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Loader, Edit2, X } from 'lucide-react';
+import { Download, Loader, Edit2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { DataTable } from './DataTable';
 import '../styles/ReportViewer.css';
@@ -205,7 +205,7 @@ export function ReportViewer() {
             key: 'id',
             label: 'id',
             sortable: false,
-            render: (value: any, row: any) => (
+            render: (_: any, row: any) => (
                 <span style={{ display: 'none' }} data-id={row.id}>{row.id}</span>
             )
         },
@@ -213,7 +213,7 @@ export function ReportViewer() {
             key: 'contractorName' as any,
             label: 'Contractor',
             sortable: true,
-            render: (value: any, row: any) => (
+            render: (_: any, row: any) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span>{row.contractorName}</span>
                     {row.noteCount > 0 && (
@@ -239,7 +239,7 @@ export function ReportViewer() {
             key: 'employerId' as any,
             label: 'Actions',
             sortable: false,
-            render: (value: any, row: any) => (
+            render: (_: any, row: any) => (
                 <button
                     className="edit-btn"
                     onClick={() => handleEditRecord(row)}
@@ -252,14 +252,14 @@ export function ReportViewer() {
         }
     ];
     const recentColumns: { key: keyof RecentHireData; label: string; sortable: boolean }[] = [
-        { key: 'employerId', label: 'Employer Id', sortable: true },
-        { key: 'contractorId', label: 'Contractor Id', sortable: true },
-        { key: 'contractorName', label: 'Contractor Name', sortable: true },
-        { key: 'memberName', label: 'Member Name', sortable: true },
-        { key: 'iaNumber', label: 'IA Number', sortable: true },
-        { key: 'startDate', label: 'Start Date', sortable: true },
-        { key: 'hireType', label: 'Hire Type', sortable: true },
-        { key: 'reviewedDate', label: 'Reviewed Date', sortable: true },
+        { key: 'Contractor Name', label: 'Contractor Name', sortable: true },
+        { key: 'Member Name', label: 'Member Name', sortable: true },
+        { key: 'IA Number', label: 'IA Number', sortable: true },
+        { key: 'Start Date', label: 'Start Date', sortable: true },
+        { key: 'Hire Type', label: 'Hire Type', sortable: true },
+        { key: 'Reviewed Date', label: 'Reviewed Date', sortable: true },
+        { key: 'Compliance Status', label: 'Reviewed Date', sortable: true },
+        { key: 'Dispatch Needed', label: 'Reviewed Date', sortable: true },
     ];
 
     return (
@@ -452,7 +452,7 @@ export function ReportViewer() {
                                         <DataTable
                                             columns={recentColumns}
                                             data={recentHires}
-                                            searchableColumns={['contractorName', 'memberName']}
+                                            searchableColumns={['Contractor Name', 'Member Name']}
                                             title="Recent Hires Report"
                                             maxHeight="400px"
                                         />

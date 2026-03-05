@@ -3,7 +3,7 @@
  * Dependency Inversion Principle: Depends on abstraction, not concrete implementations
  */
 
-import { createContext, ReactNode } from 'react';
+import { createContext, type ReactNode } from 'react';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 import { AxiosApiClient } from '../services/implementations/AxiosApiClient';
 

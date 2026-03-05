@@ -4,29 +4,39 @@
  * Single Responsibility: Only handles file upload business logic
  */
 
-import { useState, useCallback } from 'react';
-import { useImportHireData } from '../hooks';
+import { useState, useCallback, useRef } from 'react';
+import { useImportHireData, useImportContractorSnapshots } from '../hooks';
 import { useApiClient } from '../providers';
 import { isValidCsvFile, extractErrorMessage } from '../utils';
 import { FileUploadDropZone, FileInfo } from './presentational';
 import '../styles/FileUpload.css';
 
 interface FileUploadProps {
+    endpoint?: string;
+    title?: string;
     onSuccess?: (result: { message: string; rowsImported: number }) => void;
     onError?: (error: string) => void;
 }
 
-export function FileUpload({ onSuccess, onError }: FileUploadProps) {
+export function FileUpload({
+    endpoint = '/api/import/hires',
+    title = 'Hire Data Import',
+    onSuccess,
+    onError
+}: FileUploadProps) {
     const apiClient = useApiClient();
-    const [dragActive, setDragActive] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-    const mutation = useImportHireData(apiClient);
+    // Use appropriate mutation hook based on endpoint
+    const hireDataMutation = useImportHireData(apiClient);
+    const contractorSnapshotMutation = useImportContractorSnapshots(apiClient);
+    const mutation = endpoint === '/api/import/hires' ? hireDataMutation : contractorSnapshotMutation;
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setDragActive(e.type === 'dragenter' || e.type === 'dragover');
+        // dragActive removed
     }, []);
 
     const handleFileSelect = useCallback(
@@ -44,9 +54,9 @@ export function FileUpload({ onSuccess, onError }: FileUploadProps) {
         (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            setDragActive(false);
+            // dragActive removed
             const files = e.dataTransfer.files;
-            if (files?.length > 0) {
+            if (files && files.length > 0) {
                 handleFileSelect(files[0]);
             }
         },
@@ -56,32 +66,40 @@ export function FileUpload({ onSuccess, onError }: FileUploadProps) {
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const files = e.currentTarget.files;
-            if (files?.length > 0) {
+            if (files && files.length > 0) {
                 handleFileSelect(files[0]);
             }
         },
         [handleFileSelect]
     );
 
+    const resetFileInput = useCallback(() => {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        setSelectedFile(null);
+    }, []);
+
     const handleImport = useCallback(() => {
         if (selectedFile) {
             mutation.mutate(selectedFile, {
-                onSuccess: (data) => {
+                onSuccess: (data: { message: string; rowsImported: number }) => {
                     onSuccess?.(data);
-                    setSelectedFile(null);
+                    resetFileInput();
                 },
                 onError: (error) => {
                     onError?.(extractErrorMessage(error, 'Upload failed'));
                 },
             });
         }
-    }, [selectedFile, mutation, onSuccess, onError]);
+    }, [selectedFile, mutation, onSuccess, onError, resetFileInput]);
 
     return (
         <div className="file-upload-container">
-            <h3>Hire Data Import</h3>
+            <h3>{title}</h3>
 
             <FileUploadDropZone
+                fileInputRef={fileInputRef}
                 isLoading={mutation.isPending}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -106,7 +124,7 @@ export function FileUpload({ onSuccess, onError }: FileUploadProps) {
 
             {mutation.isSuccess && (
                 <div className="success-message">
-                    <strong>Success!</strong> {mutation.data.rowsImported} rows processed.
+                    <strong>Success!</strong> {(mutation.data as { rowsImported?: number })?.rowsImported ?? 0} rows processed.
                 </div>
             )}
         </div>

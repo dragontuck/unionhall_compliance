@@ -4,7 +4,7 @@
  * Single Responsibility: Only manages page-level state
  */
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FileUpload } from '../components/FileUpload';
@@ -18,7 +18,7 @@ const createQueryClient = () => new QueryClient();
 
 export function Dashboard() {
     const navigate = useNavigate();
-    const { alert, showAlert, clearAlert } = useAlert(2000);
+    const { alert, showAlert } = useAlert(2000);
 
     const handleFileUploadSuccess = useCallback(
         (result: { message: string; rowsImported: number }) => {
@@ -28,6 +28,20 @@ export function Dashboard() {
     );
 
     const handleFileUploadError = useCallback(
+        (error: string) => {
+            showAlert('error', error);
+        },
+        [showAlert]
+    );
+
+    const handleContractorSnapshotUploadSuccess = useCallback(
+        (result: { message: string; rowsImported: number }) => {
+            showAlert('success', result.message);
+        },
+        [showAlert]
+    );
+
+    const handleContractorSnapshotUploadError = useCallback(
         (error: string) => {
             showAlert('error', error);
         },
@@ -71,8 +85,18 @@ export function Dashboard() {
                 <div className="dashboard-grid">
                     <div className="section">
                         <FileUpload
+                            title="Hire Data Import"
                             onSuccess={handleFileUploadSuccess}
                             onError={handleFileUploadError}
+                        />
+                    </div>
+
+                    <div className="section">
+                        <FileUpload
+                            title="Contractor Snapshot Import"
+                            endpoint="/api/import/contractor-snapshots"
+                            onSuccess={handleContractorSnapshotUploadSuccess}
+                            onError={handleContractorSnapshotUploadError}
                         />
                     </div>
 

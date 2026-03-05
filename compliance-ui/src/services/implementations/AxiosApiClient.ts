@@ -54,6 +54,15 @@ export class AxiosApiClient implements IApiClient {
         return data;
     }
 
+    async importContractorSnapshots(file: File): Promise<{ message: string; rowsImported: number }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const { data } = await this.api.post('/import/contractor-snapshots', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    }
+
     async getReports(filters?: {
         runId?: number;
         contractorId?: number;

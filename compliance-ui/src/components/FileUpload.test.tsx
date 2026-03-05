@@ -31,7 +31,7 @@ vi.mock('../utils', () => ({
 }));
 
 vi.mock('./presentational', () => ({
-    FileUploadDropZone: ({ onDrop, onChange }: any) => (
+    FileUploadDropZone: ({ onChange }: any) => (
         <div>
             <input
                 type="file"
@@ -71,7 +71,7 @@ describe('FileUpload Component', () => {
         };
 
         mockMutation = {
-            mutate: vi.fn((file, { onSuccess, onError }) => { }),
+            mutate: vi.fn((_, { }) => { }),
             isPending: false,
             isError: false,
             isSuccess: false,
@@ -173,7 +173,7 @@ describe('FileUpload Component', () => {
             const onSuccess = vi.fn();
             const successData = { message: 'Success', rowsImported: 50 };
 
-            mockMutation.mutate = vi.fn((file, { onSuccess: onSuccessCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onSuccess: onSuccessCallback }) => {
                 onSuccessCallback(successData);
             });
 
@@ -200,7 +200,7 @@ describe('FileUpload Component', () => {
             const onError = vi.fn();
             const error = new Error('Import failed');
 
-            mockMutation.mutate = vi.fn((file, { onError: onErrorCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onError: onErrorCallback }) => {
                 onErrorCallback(error);
             });
 
@@ -267,14 +267,14 @@ describe('FileUpload Component', () => {
         it('should clear selected file after successful import', async () => {
             const successData = { message: 'Success', rowsImported: 50 };
 
-            mockMutation.mutate = vi.fn((file, { onSuccess: onSuccessCallback }) => {
+            mockMutation.mutate = vi.fn((_, { onSuccess: onSuccessCallback }) => {
                 onSuccessCallback(successData);
             });
 
             const user = userEvent.setup();
             const file = new File(['test'], 'data.csv', { type: 'text/csv' });
 
-            const { rerender } = render(
+            render(
                 <FileUpload />,
                 { wrapper: createWrapper() }
             );

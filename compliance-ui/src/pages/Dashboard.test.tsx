@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import { Dashboard } from './Dashboard';
 
 // Mock components
@@ -110,7 +110,7 @@ describe('Dashboard Page', () => {
 
     describe('FileUpload Integration', () => {
         it('should show alert on successful file upload', async () => {
-            const { rerender } = render(
+            const { } = render(
                 <Dashboard />,
                 { wrapper: createWrapper() }
             );

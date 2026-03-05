@@ -38,14 +38,14 @@ export class RunController {
      * POST /api/runs - Create new run
      */
     createRun = asyncHandler(async (req, res) => {
-        const { modeId, reviewedDate, runNumber } = req.body;
-
-        if (!modeId || !reviewedDate) {
+        const { mode, reviewedDate, runNumber } = req.body;
+        console.log('Create Run:', req.body);
+        if (!mode || !reviewedDate) {
             throw AppError.badRequest('Mode ID and reviewed date are required');
         }
 
         const newRunResult = await this.runService.createRun({
-            modeId: parseInt(modeId),
+            modeId: parseInt(mode),
             reviewedDate,
             runNumber: runNumber ? parseInt(runNumber) : undefined
         });

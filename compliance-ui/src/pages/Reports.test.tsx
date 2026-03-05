@@ -82,7 +82,7 @@ describe('Reports Page', () => {
         });
 
         it('should render ReportViewer after header', () => {
-            const { container } = render(
+            render(
                 <Reports />,
                 { wrapper: createWrapper() }
             );
@@ -94,7 +94,7 @@ describe('Reports Page', () => {
 
     describe('QueryClient Provider', () => {
         it('should wrap content with QueryClientProvider', () => {
-            const { container } = render(
+            render(
                 <Reports />,
                 { wrapper: createWrapper() }
             );

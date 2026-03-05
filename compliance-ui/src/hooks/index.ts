@@ -10,7 +10,7 @@ export { useModes } from './useModes';
 export { useRawHireData, useRecentHiresByRun } from './useHireData';
 
 // Mutation hooks
-export { useExecuteRun, useImportHireData, useUpdateComplianceReport } from './useMutations';
+export { useExecuteRun, useImportHireData, useImportContractorSnapshots, useUpdateComplianceReport } from './useMutations';
 export type { ExecuteRunParams, ExecuteRunResponse } from './useMutations';
 
 // UI state hooks

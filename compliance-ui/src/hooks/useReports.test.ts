@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
-import { useReportsByRun, useReportDetailsByRun, useLastHiresByRun } from './useReports';
+import type { ReactNode } from 'react';
+import { useReportsByRun } from './useReports';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 
 describe('useReports hooks', () => {

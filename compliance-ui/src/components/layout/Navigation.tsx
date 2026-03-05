@@ -3,7 +3,6 @@
  * Single Responsibility Principle: Only renders navigation UI
  */
 
-import { BarChart3 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 export interface NavLink {

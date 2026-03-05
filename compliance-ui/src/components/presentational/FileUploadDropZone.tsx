@@ -4,6 +4,7 @@
  */
 
 import { Upload, Loader } from 'lucide-react';
+import { useId } from 'react';
 import '../../styles/FileUpload.css';
 
 export interface FileUploadDropZoneProps {
@@ -13,6 +14,7 @@ export interface FileUploadDropZoneProps {
     onDragOver: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    fileInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function FileUploadDropZone({
@@ -22,7 +24,11 @@ export function FileUploadDropZone({
     onDragOver,
     onDrop,
     onChange,
+    fileInputRef,
 }: FileUploadDropZoneProps) {
+    const uniqueId = useId();
+    const inputId = `file-input-${uniqueId}`;
+
     return (
         <div
             className="upload-zone"
@@ -32,15 +38,16 @@ export function FileUploadDropZone({
             onDrop={onDrop}
         >
             <input
+                ref={fileInputRef}
                 type="file"
-                id="file-input"
+                id={inputId}
                 accept=".csv"
                 onChange={onChange}
                 disabled={isLoading}
                 className="file-input"
                 aria-label="Select CSV file"
             />
-            <label htmlFor="file-input" className="upload-label">
+            <label htmlFor={inputId} className="upload-label">
                 {isLoading ? (
                     <>
                         <Loader size={48} className="icon spinning" />

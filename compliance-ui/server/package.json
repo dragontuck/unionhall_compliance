@@ -9,7 +9,9 @@
         "dev": "node --watch src/index.js",
         "test": "jest",
         "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+        "test:coverage": "jest --coverage",
+        "build:dist": "node build-distribution.js",
+        "build:dist:custom": "node build-distribution.js $npm_config_version $npm_config_output"
     },
     "keywords": [],
     "author": "",

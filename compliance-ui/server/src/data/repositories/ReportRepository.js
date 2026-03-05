@@ -49,6 +49,8 @@ export class ReportRepository extends MssqlRepository {
                 runId, 
                 employerId, 
                 contractorId, 
+                CONVERT(DATETIME2(0), lastWedReported, 101) AS lastWedReported,
+                CONVERT(DATETIME2(0), snapshotWed, 101) AS snapshotWed,
                 contractorName, 
                 complianceStatus, 
                 directCount, 
@@ -68,14 +70,24 @@ export class ReportRepository extends MssqlRepository {
      * @returns {Promise<Object|null>} Report or null
      */
     async getReportById(reportId) {
-        return this.queryOne(
-            `SELECT id, runId, employerId, contractorId, contractorName, complianceStatus, 
-                    directCount, dispatchNeeded, nextHireDispatch,
-                    (SELECT COUNT(*) FROM CMP_ReportNotes 
-                     WHERE CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
-             FROM CMP_Reports WHERE id = @id`,
-            { id: reportId }
-        );
+        return this.queryOne(`
+            SELECT 
+                id, 
+                runId, 
+                employerId, 
+                contractorId, 
+                CONVERT(DATETIME2(0), lastWedReported, 101) AS lastWedReported,
+                CONVERT(DATETIME2(0), snapshotWed, 101) AS snapshotWed,
+                contractorName, 
+                complianceStatus, 
+                directCount, 
+                dispatchNeeded, 
+                nextHireDispatch,
+                (SELECT COUNT(*) FROM CMP_ReportNotes 
+                 WHERE CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
+            FROM CMP_Reports 
+            WHERE id = @id
+        `, { id: reportId });
     }
 
     /**
@@ -108,13 +120,13 @@ export class ReportRepository extends MssqlRepository {
      * @returns {Promise<number>} Number of rows inserted
      */
     async createReport(reportData) {
-        const { runId, employerId, contractorId, contractorName, complianceStatus, dispatchNeeded, nextHireDispatch, directCount } = reportData;
+        const { runId, employerId, contractorId, contractorName, complianceStatus, dispatchNeeded, nextHireDispatch, directCount, lastWedReported, snapshotWed, companyType } = reportData;
 
         return this.execute(`
             INSERT INTO CMP_Reports 
-            (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount)
+            (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount, LastWedReported, SnapshotWed, CompanyType)
             VALUES 
-            (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch, @directCount)
+            (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch, @directCount, @lastWedReported, @snapshotWed, @companyType)
         `, {
             runId,
             employerId,
@@ -123,7 +135,10 @@ export class ReportRepository extends MssqlRepository {
             complianceStatus,
             dispatchNeeded,
             nextHireDispatch,
-            directCount
+            directCount,
+            lastWedReported: lastWedReported || null,
+            snapshotWed: snapshotWed || null,
+            companyType: companyType || null
         });
     }
 

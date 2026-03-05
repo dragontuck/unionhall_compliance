@@ -14,6 +14,7 @@ export class ReportController {
 
     /**
      * GET /api/reports - Get reports with optional filters
+     * Returns reports with contractor snapshot fields (LastWedReported, SnapshotWed, CompanyType)
      */
     getReports = asyncHandler(async (req, res) => {
         const { runId, contractorId, employerId } = req.query;
@@ -30,6 +31,7 @@ export class ReportController {
 
     /**
      * GET /api/reports/run/:runId - Get reports by run
+     * Returns reports with contractor snapshot fields (LastWedReported, SnapshotWed, CompanyType)
      */
     getReportsByRun = asyncHandler(async (req, res) => {
         const runId = parseInt(req.params.runId);

@@ -7,13 +7,14 @@ import sql from 'mssql';
 import XLSX from 'xlsx';
 
 export class RunService {
-    constructor(runRepository, modeRepository, reportRepository, reportDetailRepository, hireDataRepository, complianceEngine) {
+    constructor(runRepository, modeRepository, reportRepository, reportDetailRepository, hireDataRepository, complianceEngine, contractorSnapshotRepository) {
         this.runRepo = runRepository;
         this.modeRepo = modeRepository;
         this.reportRepo = reportRepository;
         this.detailRepo = reportDetailRepository;
         this.hireDataRepo = hireDataRepository;
         this.complianceEngine = complianceEngine;
+        this.snapshotRepo = contractorSnapshotRepository;
     }
 
     /**
@@ -126,6 +127,8 @@ export class RunService {
                     const employerId = c.EmployerId;
                     console.log(`Processing contractor: ${contractorName} (ID: ${contractorId})`);
 
+
+
                     // Seed from previous run (report data).
                     let seed = null;
                     if (prevRunId) {
@@ -195,6 +198,9 @@ export class RunService {
                     // Insert report summary row.
                     console.log(`Final state for ${contractorName}: Status=${this.complianceEngine.codeToStatus(state.compliance)}, Direct=${state.directCount}, Dispatch=${state.dispatchNeeded}`);
                     if (!dryRun) {
+                        // Get contractor snapshot data
+                        const snapshot = await this.snapshotRepo.getMostRecentSnapshotByContractorId(employerId);
+
                         await tx
                             .request()
                             .input('runId', sql.BigInt, runId)
@@ -205,11 +211,14 @@ export class RunService {
                             .input('dispatchNeeded', sql.Int, state.dispatchNeeded)
                             .input('nextHireDispatch', sql.VarChar(1), state.nextHireDispatch)
                             .input('directCount', sql.Int, state.directCount)
+                            .input('lastWedReported', sql.DateTime2, snapshot ? snapshot.LastWedReported : null)
+                            .input('snapshotWed', sql.DateTime2, snapshot ? snapshot.SnapshotWed : null)
+                            .input('companyType', sql.VarChar(255), snapshot ? snapshot.CompanyType : null)
                             .query(
                                 `INSERT INTO dbo.CMP_Reports
-                                 (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount)
+                                 (RunId, EmployerId, ContractorId, ContractorName, ComplianceStatus, DispatchNeeded, NextHireDispatch, DirectCount, LastWedReported, SnapshotWed, CompanyType)
                                  VALUES
-                                 (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch, @directCount);`
+                                 (@runId, @employerId, @contractorId, @contractorName, @complianceStatus, @dispatchNeeded, @nextHireDispatch, @directCount, @lastWedReported, @snapshotWed, @companyType);`
                             );
                     }
                 }
@@ -253,6 +262,63 @@ export class RunService {
     }
 
     /**
+     * Format date fields to ISO date string and apply text formatting to Excel cells
+     * @private
+     */
+    _formatDatesInArray(data, dateFields = ['StartDate', 'ReviewedDate', 'ReportDate']) {
+        return data.map(row => {
+            const formatted = { ...row };
+            dateFields.forEach(field => {
+                if (formatted[field] instanceof Date) {
+                    // Convert to YYYY-MM-DD format without timezone issues
+                    formatted[field] = formatted[field].toISOString().split('T')[0];
+                } else if (formatted[field] && typeof formatted[field] === 'string') {
+                    // If already a string, ensure it's in YYYY-MM-DD format
+                    const match = formatted[field].match(/(\d{4}-\d{2}-\d{2})/);
+                    if (match) {
+                        formatted[field] = match[1];
+                    }
+                }
+            });
+            return formatted;
+        });
+    }
+
+    /**
+     * Apply text formatting to date columns in Excel sheet to prevent date interpretation
+     * @private
+     */
+    _formatDateColumnsAsText(sheet, dateFields = ['StartDate', 'ReviewedDate', 'ReportDate']) {
+        if (!sheet || !sheet['!ref']) return;
+
+        // Parse the sheet reference to get column letters for date fields
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+
+        // Get header row to find column indices for date fields
+        const headerRow = 1;
+        const dateColumnIndices = [];
+
+        for (let col = range.s.c; col <= range.e.c; col++) {
+            const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+            const cell = sheet[cellRef];
+            if (cell && dateFields.includes(cell.v)) {
+                dateColumnIndices.push(col);
+            }
+        }
+
+        // Apply text format to all cells in date columns
+        for (let row = range.s.r; row <= range.e.r; row++) {
+            for (const col of dateColumnIndices) {
+                const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+                if (sheet[cellRef]) {
+                    sheet[cellRef].t = 's'; // Set cell type to string
+                    sheet[cellRef].z = '@'; // Set number format to text
+                }
+            }
+        }
+    }
+
+    /**
      * Get run details for export
      * @param {number} runId - Run ID
      * @returns {Promise<Object>} Complete run data for export
@@ -268,21 +334,30 @@ export class RunService {
 
         const wb = XLSX.utils.book_new();
 
-        // Details sheet
+        // Details sheet - format dates
+        const formattedDetails = this._formatDatesInArray(details, ['StartDate', 'ReviewedDate']);
         const detailsSheet = XLSX.utils.json_to_sheet(details);
+        console.log('Details Sheet before formatting:', detailsSheet);
+        this._formatDateColumnsAsText(detailsSheet, ['StartDate', 'ReviewedDate']);
         XLSX.utils.book_append_sheet(wb, detailsSheet, 'Detail');
 
-        // Reports sheet - remove id and runid properties
+        // Reports sheet - remove id and runid properties and format dates
         const filteredReports = reports.map(({ id, runId, ...rest }) => rest);
+        const formattedReports = this._formatDatesInArray(filteredReports, ['lastWedReported', 'snapshotWed']);
         const reportsSheet = XLSX.utils.json_to_sheet(filteredReports);
+        this._formatDateColumnsAsText(reportsSheet, ['lastWedReported', 'snapshotWed']);
         XLSX.utils.book_append_sheet(wb, reportsSheet, 'Report');
 
-        // Last 4 sheet
+        // Last 4 sheet - format dates
+        const formattedLastHires = this._formatDatesInArray(lastHires, ['StartDate', 'ReviewedDate']);
         const last4Sheet = XLSX.utils.json_to_sheet(lastHires);
+        this._formatDateColumnsAsText(last4Sheet, ['StartDate', 'ReviewedDate']);
         XLSX.utils.book_append_sheet(wb, last4Sheet, 'Last 4');
 
-        // Recent Hire sheet
+        // Recent Hire sheet - format dates
+        const formattedRecentHires = this._formatDatesInArray(recentHires, ['StartDate', 'ReviewedDate']);
         const recentHireSheet = XLSX.utils.json_to_sheet(recentHires);
+        this._formatDateColumnsAsText(recentHireSheet, ['StartDate', 'ReviewedDate']);
         XLSX.utils.book_append_sheet(wb, recentHireSheet, 'Recent Hire');
 
         // Write to buffer

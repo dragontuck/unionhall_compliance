@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useExecuteRun, useImportHireData, useUpdateComplianceReport } from './useMutations';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 

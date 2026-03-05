@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  compliance-ui:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: compliance-ui
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - compliance-network
+
+networks:
+  compliance-network:
+    driver: bridge

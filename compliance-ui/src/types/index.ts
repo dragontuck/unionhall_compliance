@@ -37,14 +37,14 @@ export interface ComplianceReportDetail {
 }
 
 export interface RecentHireData {
-    employerId: string;
-    contractorId: number;
-    contractorName: string;
-    memberName: string;
-    iaNumber: string;
-    startDate: string;
-    hireType: string;
-    reviewedDate: string;
+    'Contractor Name': string;
+    'Member Name': string;
+    'IA Number': string;
+    'Start Date': string;
+    'Hire Type': string;
+    'Reviewed Date': string;
+    'Compliance Status': string;
+    'Dispatch Needed': number;
 }
 
 

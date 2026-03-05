@@ -72,3 +72,14 @@ export function defineHireDataRoutes(router, controller, uploadMiddleware) {
     router.get('/recent-hires/run/:runId', validateParams({ runId: { type: 'integer' } }), controller.getRecentHires);
     router.post('/import/hires', uploadMiddleware.single('file'), controller.importHires);
 }
+
+/**
+ * Define contractor snapshot routes
+ * @param {Router} router - Express router
+ * @param {ContractorSnapshotController} controller - Contractor snapshot controller
+ * @param {Function} uploadMiddleware - Multer upload middleware
+ */
+export function defineContractorSnapshotRoutes(router, controller, uploadMiddleware) {
+    router.get('/contractor-snapshots', controller.getContractorSnapshots);
+    router.post('/import/contractor-snapshots', uploadMiddleware.single('file'), controller.importContractorSnapshots);
+}

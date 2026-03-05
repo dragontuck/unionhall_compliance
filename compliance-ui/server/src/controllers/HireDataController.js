@@ -20,7 +20,7 @@ export class HireDataController {
      */
     getHireData = asyncHandler(async (req, res) => {
         const { reviewedDate } = req.query;
-        const limit = parseInt(req.query.limit) || 2000;
+        const limit = parseInt(req.query.limit) || 10000;
 
         const filters = {};
         if (reviewedDate) filters.reviewedDate = reviewedDate;
