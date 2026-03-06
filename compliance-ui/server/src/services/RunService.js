@@ -199,7 +199,7 @@ export class RunService {
                     console.log(`Final state for ${contractorName}: Status=${this.complianceEngine.codeToStatus(state.compliance)}, Direct=${state.directCount}, Dispatch=${state.dispatchNeeded}`);
                     if (!dryRun) {
                         // Get contractor snapshot data
-                        const snapshot = await this.snapshotRepo.getMostRecentSnapshotByContractorId(employerId);
+                        const snapshot = await this.snapshotRepo.getMostRecentSnapshotByContractorId(employerId, reviewedDate);
 
                         await tx
                             .request()

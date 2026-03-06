@@ -37,12 +37,12 @@ export class ContractorSnapshotRepository extends MssqlRepository {
      * @param {string} contractorId - Contractor ID
      * @returns {Promise<Object|null>} Most recent snapshot record or null
      */
-    async getMostRecentSnapshotByContractorId(contractorId) {
+    async getMostRecentSnapshotByContractorId(contractorId, runDate) {
         const results = await this.query(`
             SELECT TOP 1 * FROM CMP_ContractorSnapshot 
-            WHERE ContractorID = @contractorId
+            WHERE ContractorID = @contractorId and SnapshotWed <= @runDate
             ORDER BY SnapshotWed DESC
-        `, { contractorId });
+        `, { contractorId, runDate });
         return results.length > 0 ? results[0] : null;
     }
 
