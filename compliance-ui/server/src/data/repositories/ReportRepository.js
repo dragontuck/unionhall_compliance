@@ -17,7 +17,7 @@ export class ReportRepository extends MssqlRepository {
      * @returns {Promise<Array>} Array of report records
      */
     async getReports(filters = {}, limit = 500) {
-        let query = `SELECT TOP ${limit} * FROM CMP_Reports WHERE 1=1`;
+        let query = `SELECT TOP ${limit} * FROM CMP_Reports WHERE 1=1 AND DeletedOn IS NULL`;
         const params = {};
 
         if (filters.runId) {
@@ -49,8 +49,8 @@ export class ReportRepository extends MssqlRepository {
                 runId, 
                 employerId, 
                 contractorId, 
-                CONVERT(nvarchar, lastWedReported, 101) AS lastWedReported,
-                CONVERT(nvarchar, snapshotWed, 101) AS snapshotWed,
+                isnull(CONVERT(nvarchar, lastWedReported, 101), '') AS lastWedReported,
+                isnull(CONVERT(nvarchar, snapshotWed, 101), '') AS snapshotWed,
                 contractorName, 
                 complianceStatus, 
                 directCount, 
@@ -59,7 +59,7 @@ export class ReportRepository extends MssqlRepository {
                 (SELECT COUNT(*) FROM CMP_ReportNotes 
                  WHERE CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
             FROM CMP_Reports 
-            WHERE RunId = @runId 
+            WHERE DeletedOn IS NULL AND RunId = @runId 
             ORDER BY ContractorName
         `, { runId });
     }
@@ -76,8 +76,8 @@ export class ReportRepository extends MssqlRepository {
                 runId, 
                 employerId, 
                 contractorId, 
-                CONVERT(DATETIME2(0), lastWedReported, 101) AS lastWedReported,
-                CONVERT(DATETIME2(0), snapshotWed, 101) AS snapshotWed,
+                isnull(CONVERT(DATETIME2(0), lastWedReported, 101), '') AS lastWedReported,
+                isnull(CONVERT(DATETIME2(0), snapshotWed, 101), '') AS snapshotWed,
                 contractorName, 
                 complianceStatus, 
                 directCount, 
@@ -86,7 +86,7 @@ export class ReportRepository extends MssqlRepository {
                 (SELECT COUNT(*) FROM CMP_ReportNotes 
                  WHERE CMP_ReportNotes.employerId = CMP_Reports.employerId) as noteCount
             FROM CMP_Reports 
-            WHERE id = @id
+            WHERE id = @id AND DeletedOn IS NULL
         `, { id: reportId });
     }
 
@@ -161,11 +161,18 @@ export class ReportRepository extends MssqlRepository {
             query += `
                 UNION
                 SELECT DISTINCT EmployerId, ContractorId, ContractorName
-                FROM CMP_Reports WHERE RunId = @prevRunId
+                FROM CMP_Reports WHERE DeletedOn IS NULL AND RunId = @prevRunId
             `;
             params.prevRunId = prevRunId;
         }
 
         return this.query(query, params);
+    }
+
+    async deleteReportById(reportId) {
+        return this.execute(`
+            Update CMP_Reports set DeletedOn = GETDATE()
+            WHERE Id = @reportId
+        `, { reportId });
     }
 }

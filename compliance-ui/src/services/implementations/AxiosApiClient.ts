@@ -166,4 +166,14 @@ export class AxiosApiClient implements IApiClient {
         );
         return data;
     }
+    async deleteComplianceReport(
+        reportId: number,
+        contractorToDelete: {
+            employerId?: string;
+            note?: string;
+            changedBy?: string;
+        }
+    ): Promise<void> {
+        await this.api.post(`/reports/${reportId}/delete`, contractorToDelete);
+    }
 }

@@ -49,6 +49,7 @@ export function defineReportRoutes(router, controller) {
     router.get('/last-hires/run/:runId', validateParams({ runId: { type: 'integer' } }), controller.getLast4Hires);
     router.get('/report-notes/report/:reportId', validateParams({ reportId: { type: 'integer' } }), controller.getNotesByReport);
     router.get('/report-notes/employer/:employerId', controller.getNotesByEmployer);
+    router.post('/reports/:reportId/delete', validateParams({ reportId: { type: 'integer' } }), controller.deleteReport);
 }
 
 /**

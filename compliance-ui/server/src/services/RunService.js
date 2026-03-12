@@ -354,10 +354,11 @@ export class RunService {
         this._formatDateColumnsAsText(last4Sheet, ['StartDate', 'ReviewedDate']);
         XLSX.utils.book_append_sheet(wb, last4Sheet, 'Last 4');
 
-        // Recent Hire sheet - format dates
-        const formattedRecentHires = this._formatDatesInArray(recentHires, ['StartDate', 'ReviewedDate']);
-        const recentHireSheet = XLSX.utils.json_to_sheet(recentHires);
-        this._formatDateColumnsAsText(recentHireSheet, ['StartDate', 'ReviewedDate']);
+        // Recent Hire sheet - format dates and ensure headers are always present
+        const recentHireHeaders = ['Contractor Name', 'Member Name', 'IA Number', 'Start Date', 'Hire Type', 'Reviewed Date', 'Compliance Status', 'Dispatch Needed'];
+        const recentHireData = [recentHireHeaders, ...recentHires.map(row => recentHireHeaders.map(header => row[header] || ''))];
+        const recentHireSheet = XLSX.utils.aoa_to_sheet(recentHireData);
+        this._formatDateColumnsAsText(recentHireSheet, ['Start Date', 'Reviewed Date']);
         XLSX.utils.book_append_sheet(wb, recentHireSheet, 'Recent Hire');
 
         // Write to buffer

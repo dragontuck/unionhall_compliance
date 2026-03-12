@@ -98,6 +98,24 @@
   background: #1976D2;
 }
 
+/* delete button styling */
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #d32f2f;
+}
+
 /* Modal styling */
 .modal-overlay {
   position: fixed;

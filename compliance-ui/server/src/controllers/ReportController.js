@@ -147,4 +147,20 @@ export class ReportController {
         const notes = await this.reportService.getEmployerNotes(employerId);
         res.json(notes);
     });
+
+    deleteReport = asyncHandler(async (req, res) => {
+        const reportId = parseInt(req.params.reportId);
+        const { employerId, note, changedBy } = req.body;
+
+        if (isNaN(reportId)) {
+            throw AppError.badRequest('Report ID must be a valid integer');
+
+        }
+        if (!employerId) {
+            throw AppError.badRequest('Employer ID is required');
+        }
+
+        await this.reportService.deleteReport(reportId, { employerId, note, changedBy });
+        res.json({ message: 'Report and associated details deleted successfully' });
+    });
 }

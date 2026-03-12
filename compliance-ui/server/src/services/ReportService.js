@@ -112,4 +112,24 @@ export class ReportService {
     async getEmployerNotes(employerId) {
         return this.noteRepo.getNotesByEmployer(employerId);
     }
+
+    /**
+     * Delete report and associated details, add note if provided
+     * @param {number} reportId - Report ID
+     * @param {Object} deleteData - Data to update {employerId, note, changedBy }
+     */
+    async deleteReport(reportId, deleteData) {
+        const { employerId, note, changedBy } = deleteData;
+        await this.reportRepo.deleteReportById(reportId);
+        await this.detailRepo.deleteDetailsByEmployerId(employerId);
+        // Add note if provided
+        if (note && changedBy) {
+            await this.noteRepo.createNote({
+                reportId,
+                employerId,
+                note,
+                changedBy
+            });
+        }
+    }
 }

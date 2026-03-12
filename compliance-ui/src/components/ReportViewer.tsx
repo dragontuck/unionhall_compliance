@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Loader, Edit2 } from 'lucide-react';
+import { Download, Loader, Edit2, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { DataTable } from './DataTable';
 import '../styles/ReportViewer.css';
@@ -16,6 +16,8 @@ export function ReportViewer() {
     const [downloadError, setDownloadError] = useState<string | null>(null);
     const [editingRecord, setEditingRecord] = useState<any>(null);
     const [editForm, setEditForm] = useState<any>(null);
+    const [deletingRecord, setDeletingRecord] = useState<any>(null);
+    const [deleteForm, setDeleteForm] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [viewingNotes, setViewingNotes] = useState<any>(null);
     const [notesData, setNotesData] = useState<any[]>([]);
@@ -101,7 +103,16 @@ export function ReportViewer() {
             changedBy: record.changedBy || '',
         });
     };
-
+    const handleDeleteRecord = (record: any) => {
+        setDeletingRecord(record);
+        setDeleteForm({
+            id: record.id,
+            contractorName: record.contractorName,
+            employerId: record.employerId,
+            note: record.note || '',
+            changedBy: record.changedBy || '',
+        });
+    };
     const handleSaveEdit = async () => {
         if (!editingRecord || !editForm) return;
         setIsSaving(true);
@@ -126,12 +137,34 @@ export function ReportViewer() {
             setIsSaving(false);
         }
     };
-
+    const handlePostDelete = async () => {
+        if (!deletingRecord || !deleteForm) return;
+        setIsSaving(true);
+        try {
+            await apiService.deleteComplianceReport(deletingRecord.id, {
+                employerId: deletingRecord.employerId,
+                note: deleteForm.note,
+                changedBy: deleteForm.changedBy,
+            });
+            setDeletingRecord(null);
+            setDeleteForm(null);
+            // Refetch the reports data
+            queryClient.invalidateQueries({ queryKey: ['reports', selectedRunId] });
+        } catch (error) {
+            console.error('Failed to delete record:', error);
+            alert('Failed to delete record');
+        } finally {
+            setIsSaving(false);
+        }
+    };
     const handleCloseEdit = () => {
         setEditingRecord(null);
         setEditForm(null);
     };
-
+    const handleCloseDelete = () => {
+        setDeletingRecord(null);
+        setDeleteForm(null);
+    };
     const handleViewNotes = async (record: any) => {
         console.log('Opening notes for:', record);
         setViewingNotes(record);
@@ -240,14 +273,24 @@ export function ReportViewer() {
             label: 'Actions',
             sortable: false,
             render: (_: any, row: any) => (
-                <button
-                    className="edit-btn"
-                    onClick={() => handleEditRecord(row)}
-                    title="Edit record"
-                    aria-label="Edit record"
-                >
-                    <Edit2 size={16} />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="edit-btn"
+                        onClick={() => handleEditRecord(row)}
+                        title="Edit record"
+                        aria-label="Edit record"
+                    >
+                        <Edit2 size={16} />
+                    </button>
+                    <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteRecord(row)}
+                        title="Delete record"
+                        aria-label="Delete record"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
             )
         }
     ];
@@ -560,6 +603,60 @@ export function ReportViewer() {
                             </button>
                             <button className="btn-save" onClick={handleSaveEdit} disabled={isSaving}>
                                 {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deletingRecord && deleteForm && (
+                <div className="modal-overlay" onClick={handleCloseDelete}>
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Delete Report</h2>
+                            <button
+                                className="modal-close"
+                                onClick={handleCloseDelete}
+                                aria-label="Close dialog"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Contractor: {deletingRecord.contractorName}</label>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="delete-note">Note</label>
+                                    <textarea
+                                        id="delete-note"
+                                        value={deleteForm.note}
+                                        onChange={(e) => setDeleteForm({ ...deleteForm, note: e.target.value })}
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="delete-changed-by">Changed By</label>
+                                    <input
+                                        id="delete-changed-by"
+                                        type="text"
+                                        value={deleteForm.changedBy}
+                                        onChange={(e) => setDeleteForm({ ...deleteForm, changedBy: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={handleCloseDelete} disabled={isSaving}>
+                                Cancel
+                            </button>
+                            <button className="btn-delete" onClick={handlePostDelete} disabled={isSaving}>
+                                {isSaving ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
                     </div>

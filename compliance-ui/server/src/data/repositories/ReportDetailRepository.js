@@ -17,7 +17,7 @@ export class ReportDetailRepository extends MssqlRepository {
      * @returns {Promise<Array>} Array of detail records
      */
     async getReportDetails(filters = {}, limit = 1000) {
-        let query = `SELECT TOP ${limit} * FROM CMP_ReportDetails WHERE 1=1`;
+        let query = `SELECT TOP ${limit} * FROM CMP_ReportDetails WHERE 1=1 AND DeletedOn IS NULL`;
         const params = {};
 
         if (filters.runId) {
@@ -65,7 +65,7 @@ export class ReportDetailRepository extends MssqlRepository {
             FROM dbo.CMP_ReportDetails d
             INNER JOIN dbo.CMP_Runs r ON d.RunId = r.Id
             INNER JOIN CMP_Modes m ON r.ModeId = m.Id
-            WHERE RunId IN (
+            WHERE DeletedOn IS NULL AND RunId IN (
                 SELECT MAX(id) as Id 
                 FROM dbo.CMP_Runs 
                 GROUP BY ReviewedDate 
@@ -125,7 +125,7 @@ export class ReportDetailRepository extends MssqlRepository {
                 SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, 
                        ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate 
                 FROM dbo.CMP_ReportDetails 
-                WHERE RunId IN (
+                WHERE DeletedOn IS NULL AND RunId IN (
                     SELECT MAX(id) as Id FROM dbo.CMP_Runs 
                     GROUP BY ReviewedDate 
                     HAVING MAX(id) <= @runId
@@ -147,5 +147,11 @@ export class ReportDetailRepository extends MssqlRepository {
             WHERE rn <= 4 
             ORDER BY ContractorName, ReviewedDate ASC, StartDate ASC
         `, { runId });
+    }
+
+    async deleteDetailsByEmployerId(employerId) {
+        return this.execute(`
+            Update dbo.CMP_ReportDetails set DeletedOn = GETDATE() WHERE EmployerId = @employerId
+        `, { employerId });
     }
 }

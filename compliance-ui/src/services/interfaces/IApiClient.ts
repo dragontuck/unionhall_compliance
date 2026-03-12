@@ -75,4 +75,11 @@ export interface IApiClient {
             changedBy?: string;
         }
     ): Promise<ComplianceReport>;
+    deleteComplianceReport(
+        reportId: number,
+        contractorToDelete: {
+            employerId?: string;
+            note?: string;
+            changedBy?: string;
+        }): Promise<void>;
 }
