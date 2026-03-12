@@ -13,11 +13,13 @@ import { ReportNoteRepository } from '../data/repositories/ReportNoteRepository.
 import { ModeRepository } from '../data/repositories/ModeRepository.js';
 import { HireDataRepository } from '../data/repositories/HireDataRepository.js';
 import { ContractorSnapshotRepository } from '../data/repositories/ContractorSnapshotRepository.js';
+import { BlacklistRepository } from '../data/repositories/BlacklistRepository.js';
 import { RunService } from '../services/RunService.js';
 import { ReportService } from '../services/ReportService.js';
 import { ModeService } from '../services/ModeService.js';
 import { HireDataService } from '../services/HireDataService.js';
 import { ContractorSnapshotService } from '../services/ContractorSnapshotService.js';
+import { BlacklistService } from '../services/BlacklistService.js';
 import { ComplianceEngine } from '../services/compliance-engine.js';
 
 export class Container {
@@ -95,6 +97,7 @@ export class Container {
         this.registerFactory('modeRepository', (c) => new ModeRepository(this.dbPool));
         this.registerFactory('hireDataRepository', (c) => new HireDataRepository(this.dbPool));
         this.registerFactory('contractorSnapshotRepository', (c) => new ContractorSnapshotRepository(this.dbPool));
+        this.registerFactory('blacklistRepository', (c) => new BlacklistRepository(this.dbPool));
 
         // Business logic
         this.registerFactory('complianceEngine', (c) => new ComplianceEngine());
@@ -130,6 +133,10 @@ export class Container {
 
         this.registerFactory('contractorSnapshotService', (c) =>
             new ContractorSnapshotService(c.resolve('contractorSnapshotRepository'))
+        );
+
+        this.registerFactory('blacklistService', (c) =>
+            new BlacklistService(c.resolve('blacklistRepository'))
         );
     }
 
@@ -171,6 +178,14 @@ export class Container {
      */
     getContractorSnapshotService() {
         return this.resolve('contractorSnapshotService');
+    }
+
+    /**
+     * Get blacklist service
+     * @returns {BlacklistService} Blacklist service
+     */
+    getBlacklistService() {
+        return this.resolve('blacklistService');
     }
 
     /**

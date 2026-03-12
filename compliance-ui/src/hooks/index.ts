@@ -8,6 +8,7 @@ export { useRuns, useRunById } from './useRuns';
 export { useReportsByRun, useReportDetailsByRun, useLastHiresByRun } from './useReports';
 export { useModes } from './useModes';
 export { useRawHireData, useRecentHiresByRun } from './useHireData';
+export { useBlacklist } from './useBlacklist';
 
 // Mutation hooks
 export { useExecuteRun, useImportHireData, useImportContractorSnapshots, useUpdateComplianceReport } from './useMutations';

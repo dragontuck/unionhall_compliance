@@ -3,7 +3,9 @@
  * Single Responsibility Principle: Only renders navigation UI
  */
 
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 
 export interface NavLink {
     path: string;
@@ -19,6 +21,7 @@ export interface NavigationProps {
 
 export function Navigation({ links, appName, appIcon }: NavigationProps) {
     const location = useLocation();
+    const [showDropdown, setShowDropdown] = useState(false);
 
     return (
         <nav className="navbar">
@@ -41,6 +44,26 @@ export function Navigation({ links, appName, appIcon }: NavigationProps) {
                         </li>
                     ))}
                 </ul>
+                <div className="nav-settings">
+                    <button
+                        className="settings-btn"
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        title="Settings"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    {showDropdown && (
+                        <div className="dropdown-menu">
+                            <Link
+                                to="/blacklist"
+                                className="dropdown-item"
+                                onClick={() => setShowDropdown(false)}
+                            >
+                                Contractor Blacklist
+                            </Link>
+                        </div>
+                    )}
+                </div>
             </div>
         </nav>
     );

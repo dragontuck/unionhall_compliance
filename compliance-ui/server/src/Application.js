@@ -17,13 +17,15 @@ import { ReportController } from './controllers/ReportController.js';
 import { ModeController } from './controllers/ModeController.js';
 import { HireDataController } from './controllers/HireDataController.js';
 import { ContractorSnapshotController } from './controllers/ContractorSnapshotController.js';
+import { BlacklistController } from './controllers/BlacklistController.js';
 import {
     defineHealthRoutes,
     defineRunRoutes,
     defineReportRoutes,
     defineModeRoutes,
     defineHireDataRoutes,
-    defineContractorSnapshotRoutes
+    defineContractorSnapshotRoutes,
+    defineBlacklistRoutes
 } from './routes/index.js';
 
 /**
@@ -73,6 +75,7 @@ export function createApplication(dbPool, distPath) {
     const modeController = new ModeController(container.getModeService());
     const hireDataController = new HireDataController(container.getHireDataService());
     const contractorSnapshotController = new ContractorSnapshotController(container.getContractorSnapshotService());
+    const blacklistController = new BlacklistController(container.getBlacklistService());
 
     // Define routes
     defineHealthRoutes(apiRouter);
@@ -81,6 +84,7 @@ export function createApplication(dbPool, distPath) {
     defineModeRoutes(apiRouter, modeController);
     defineHireDataRoutes(apiRouter, hireDataController, upload);
     defineContractorSnapshotRoutes(apiRouter, contractorSnapshotController, upload);
+    defineBlacklistRoutes(apiRouter, blacklistController);
 
     // Mount API routes
     app.use('/api', apiRouter);

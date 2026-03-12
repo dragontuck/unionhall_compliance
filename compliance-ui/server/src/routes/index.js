@@ -84,3 +84,19 @@ export function defineContractorSnapshotRoutes(router, controller, uploadMiddlew
     router.get('/contractor-snapshots', controller.getContractorSnapshots);
     router.post('/import/contractor-snapshots', uploadMiddleware.single('file'), controller.importContractorSnapshots);
 }
+
+/**
+ * Define contractor blacklist routes
+ * @param {Router} router - Express router
+ * @param {BlacklistController} controller - Blacklist controller
+ */
+export function defineBlacklistRoutes(router, controller) {
+    router.get('/blacklist', controller.getAll);
+    router.get('/blacklist/all', controller.getAllIncludingDeleted);
+    router.get('/blacklist/:id', validateParams({ id: { type: 'integer' } }), controller.getById);
+    router.get('/blacklist/employer/:employerId', controller.getByEmployerId);
+    router.post('/blacklist/check', controller.checkBlacklist);
+    router.post('/blacklist', controller.create);
+    router.put('/blacklist/:id', validateParams({ id: { type: 'integer' } }), controller.update);
+    router.delete('/blacklist/:id', validateParams({ id: { type: 'integer' } }), controller.delete);
+}

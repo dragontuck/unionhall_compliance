@@ -87,3 +87,11 @@ export interface ExcelExportData {
     details: ComplianceReportDetail[];
     reports: ComplianceReport[];
 }
+
+export interface ContractorBlacklist {
+    Id: number;
+    EmployerID: string;
+    ContractorName: string;
+    CreatedOn: string;
+    DeletedOn: string | null;
+}

@@ -16,6 +16,7 @@ import type {
     HireData,
     RecentHireData,
     ReportNote,
+    ContractorBlacklist,
 } from '../../types';
 
 export class AxiosApiClient implements IApiClient {
@@ -175,5 +176,48 @@ export class AxiosApiClient implements IApiClient {
         }
     ): Promise<void> {
         await this.api.post(`/reports/${reportId}/delete`, contractorToDelete);
+    }
+
+    async getBlacklist(): Promise<ContractorBlacklist[]> {
+        const { data } = await this.api.get<ContractorBlacklist[]>('/blacklist');
+        return data;
+    }
+
+    async getBlacklistIncludingDeleted(): Promise<ContractorBlacklist[]> {
+        const { data } = await this.api.get<ContractorBlacklist[]>('/blacklist/all');
+        return data;
+    }
+
+    async getBlacklistById(id: number): Promise<ContractorBlacklist> {
+        const { data } = await this.api.get<ContractorBlacklist>(`/blacklist/${id}`);
+        return data;
+    }
+
+    async getBlacklistByEmployerId(employerId: string): Promise<ContractorBlacklist[]> {
+        const { data } = await this.api.get<ContractorBlacklist[]>(`/blacklist/employer/${employerId}`);
+        return data;
+    }
+
+    async createBlacklist(data: {
+        employerId: string;
+        contractorName: string;
+    }): Promise<ContractorBlacklist> {
+        const response = await this.api.post<ContractorBlacklist>('/blacklist', data);
+        return response.data;
+    }
+
+    async updateBlacklist(
+        id: number,
+        data: {
+            contractorName: string;
+        }
+    ): Promise<ContractorBlacklist> {
+        const response = await this.api.put<ContractorBlacklist>(`/blacklist/${id}`, data);
+        return response.data;
+    }
+
+    async deleteBlacklist(id: number): Promise<ContractorBlacklist> {
+        const { data } = await this.api.delete<ContractorBlacklist>(`/blacklist/${id}`);
+        return data;
     }
 }

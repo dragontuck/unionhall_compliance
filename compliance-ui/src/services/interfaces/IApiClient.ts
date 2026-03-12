@@ -13,6 +13,7 @@ import type {
     HireData,
     RecentHireData,
     ReportNote,
+    ContractorBlacklist,
 } from '../../types';
 
 export interface IApiClient {
@@ -82,4 +83,21 @@ export interface IApiClient {
             note?: string;
             changedBy?: string;
         }): Promise<void>;
+
+    // Contractor Blacklist
+    getBlacklist(): Promise<ContractorBlacklist[]>;
+    getBlacklistIncludingDeleted(): Promise<ContractorBlacklist[]>;
+    getBlacklistById(id: number): Promise<ContractorBlacklist>;
+    getBlacklistByEmployerId(employerId: string): Promise<ContractorBlacklist[]>;
+    createBlacklist(data: {
+        employerId: string;
+        contractorName: string;
+    }): Promise<ContractorBlacklist>;
+    updateBlacklist(
+        id: number,
+        data: {
+            contractorName: string;
+        }
+    ): Promise<ContractorBlacklist>;
+    deleteBlacklist(id: number): Promise<ContractorBlacklist>;
 }

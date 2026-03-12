@@ -9,6 +9,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Navigation, Footer } from './components/layout';
 import { Dashboard } from './pages/Dashboard';
 import { Reports } from './pages/Reports';
+import { ContractorBlacklist } from './pages/ContractorBlacklist';
 import type { NavLink } from './components/layout';
 import './App.css';
 
@@ -41,6 +42,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:runId" element={<Reports />} />
+          <Route path="/blacklist" element={<ContractorBlacklist />} />
         </Routes>
       </main>
 
