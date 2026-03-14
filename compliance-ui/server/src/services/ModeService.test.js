@@ -2,6 +2,7 @@
  * ModeService.test.js - Unit tests for ModeService
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ModeService } from '../../src/services/ModeService.js';
 
 describe('ModeService', () => {
@@ -11,8 +12,8 @@ describe('ModeService', () => {
     beforeEach(() => {
         // Create mock repository
         mockModeRepository = {
-            getAllModes: jest.fn(),
-            getModeById: jest.fn(),
+            getAllModes: vi.fn(),
+            getModeById: vi.fn(),
         };
 
         modeService = new ModeService(mockModeRepository);

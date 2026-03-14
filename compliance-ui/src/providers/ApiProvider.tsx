@@ -1,10 +1,12 @@
 /**
- * ApiContext - Provides IApiClient to entire application
- * Dependency Inversion Principle: Depends on abstraction, not concrete implementations
+ * ApiProvider - Context provider for API client
+ * Provides full IApiClient or any segregated interface through specialized hooks
+ * Allows dependency injection of API client for testing and flexibility
+ * Interface Segregation Principle: Clients can depend on specific interfaces via useSpecializedApi
  */
 
 import { createContext, type ReactNode } from 'react';
-import type { IApiClient } from '../services/interfaces/IApiClient';
+import type { IApiClient } from '../services/interfaces';
 import { AxiosApiClient } from '../services/implementations/AxiosApiClient';
 
 export const ApiContext = createContext<IApiClient | undefined>(undefined);

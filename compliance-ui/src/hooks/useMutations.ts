@@ -1,10 +1,10 @@
 /**
  * useMutations - Custom hooks for API mutations
- * Single Responsibility Principle: Encapsulates mutation logic
+ * Dependency Inversion: Uses specialized APIs via context
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { IApiClient } from '../services/interfaces/IApiClient';
+import { useRunsApi, useImportApi, useComplianceReportApi } from '../providers';
 
 export interface ExecuteRunParams {
     reviewedDate: string;
@@ -22,12 +22,13 @@ export interface ExecuteRunResponse {
 /**
  * useExecuteRun - Mutation hook for executing compliance runs
  */
-export function useExecuteRun(apiClient: IApiClient) {
+export function useExecuteRun() {
+    const runsApi = useRunsApi();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (params: ExecuteRunParams) => {
-            const result = await apiClient.executeRun(params);
+            const result = await runsApi.executeRun(params);
             return {
                 message: `Run executed successfully${params.dryRun ? ' (dry run)' : ''}! Reviewed Date: ${params.reviewedDate}`,
                 runId: result.id,
@@ -44,30 +45,33 @@ export function useExecuteRun(apiClient: IApiClient) {
 /**
  * useImportHireData - Mutation hook for importing hire data
  */
-export function useImportHireData(apiClient: IApiClient) {
+export function useImportHireData() {
+    const importApi = useImportApi();
     return useMutation({
-        mutationFn: (file: File) => apiClient.importHireData(file),
+        mutationFn: (file: File) => importApi.importHireData(file),
     });
 }
 
 /**
  * useImportContractorSnapshots - Mutation hook for importing contractor snapshots
  */
-export function useImportContractorSnapshots(apiClient: IApiClient) {
+export function useImportContractorSnapshots() {
+    const importApi = useImportApi();
     return useMutation({
-        mutationFn: (file: File) => apiClient.importContractorSnapshots(file),
+        mutationFn: (file: File) => importApi.importContractorSnapshots(file),
     });
 }
 
 /**
  * useUpdateComplianceReport - Mutation hook for updating compliance reports
  */
-export function useUpdateComplianceReport(apiClient: IApiClient) {
+export function useUpdateComplianceReport() {
+    const complianceReportApi = useComplianceReportApi();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (params: { reportDetailId: number; updates: { status: string; notes?: string } }) =>
-            apiClient.updateComplianceReport(params.reportDetailId, params.updates),
+            complianceReportApi.updateComplianceReport(params.reportDetailId, params.updates),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['reportDetails'] });
             queryClient.invalidateQueries({ queryKey: ['reports'] });

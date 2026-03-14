@@ -2,6 +2,7 @@
  * ErrorHandler.test.js - Unit tests for ErrorHandler
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { errorHandler, asyncHandler } from './ErrorHandler.js';
 
 describe('errorHandler', () => {
@@ -10,15 +11,15 @@ describe('errorHandler', () => {
     beforeEach(() => {
         mockReq = {};
         mockRes = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn(),
         };
-        mockNext = jest.fn();
-        console.error = jest.fn();
+        mockNext = vi.fn();
+        console.error = vi.fn();
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should return 500 status by default', () => {
@@ -161,18 +162,18 @@ describe('asyncHandler', () => {
     beforeEach(() => {
         mockReq = {};
         mockRes = {};
-        mockNext = jest.fn();
+        mockNext = vi.fn();
     });
 
     it('should return a function', () => {
-        const handler = jest.fn();
+        const handler = vi.fn();
         const wrapped = asyncHandler(handler);
 
         expect(typeof wrapped).toBe('function');
     });
 
     it('should call the handler with request, response, and next', () => {
-        const handler = jest.fn().mockResolvedValue(undefined);
+        const handler = vi.fn().mockResolvedValue(undefined);
         const wrapped = asyncHandler(handler);
 
         wrapped(mockReq, mockRes, mockNext);
@@ -182,7 +183,7 @@ describe('asyncHandler', () => {
 
     it('should pass errors to next middleware', async () => {
         const testError = new Error('Handler error');
-        const handler = jest.fn().mockRejectedValue(testError);
+        const handler = vi.fn().mockRejectedValue(testError);
         const wrapped = asyncHandler(handler);
 
         wrapped(mockReq, mockRes, mockNext);
@@ -193,7 +194,7 @@ describe('asyncHandler', () => {
     });
 
     it('should handle successful async operations', () => {
-        const handler = jest.fn().mockResolvedValue({ data: 'test' });
+        const handler = vi.fn().mockResolvedValue({ data: 'test' });
         const wrapped = asyncHandler(handler);
 
         wrapped(mockReq, mockRes, mockNext);
@@ -204,7 +205,7 @@ describe('asyncHandler', () => {
 
     it('should handle Promise rejections', async () => {
         const testError = new Error('Promise rejection');
-        const handler = jest.fn().mockImplementation(() => Promise.reject(testError));
+        const handler = vi.fn().mockImplementation(() => Promise.reject(testError));
         const wrapped = asyncHandler(handler);
 
         wrapped(mockReq, mockRes, mockNext);
@@ -216,7 +217,7 @@ describe('asyncHandler', () => {
 
     it('should handle synchronous function that throws', async () => {
         const testError = new Error('Sync error');
-        const handler = jest.fn(async (req, res, next) => {
+        const handler = vi.fn(async (req, res, next) => {
             throw testError;
         });
         const wrapped = asyncHandler(handler);

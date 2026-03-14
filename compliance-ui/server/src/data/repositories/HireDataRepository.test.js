@@ -2,6 +2,7 @@
  * HireDataRepository.test.js - Unit tests for HireDataRepository
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { HireDataRepository } from './HireDataRepository.js';
 
 describe('HireDataRepository', () => {
@@ -11,21 +12,21 @@ describe('HireDataRepository', () => {
 
     beforeEach(() => {
         mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         mockPool = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         repository = new HireDataRepository(mockPool);
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.runOnlyPendingTimers();
-        jest.useRealTimers();
+        vi.runOnlyPendingTimers();
+        vi.useRealTimers();
     });
 
     describe('getHireData', () => {
@@ -61,7 +62,7 @@ describe('HireDataRepository', () => {
             await repository.getHireData({ reviewedDate: '2025-01-15' });
 
             expect(mockRequest.query).toHaveBeenCalledWith(
-                expect.stringContaining('ReviewedDate <= @reviewedDate')
+                expect.stringContaining('Convert(date, ReviewedDate)')
             );
             expect(mockRequest.input).toHaveBeenCalledWith('reviewedDate', expect.anything(), '2025-01-15');
         });
@@ -103,9 +104,9 @@ describe('HireDataRepository', () => {
             await repository.getRecentHires(5);
 
             const query = mockRequest.query.mock.calls[0][0];
-            expect(query).toContain('employerId');
-            expect(query).toContain('contractorId');
-            expect(query).toContain('memberName');
+            expect(query).toContain('ContractorName');
+            expect(query).toContain('MemberName');
+            expect(query).toContain('IANumber');
             expect(query).toContain('startDate');
         });
 
@@ -115,16 +116,18 @@ describe('HireDataRepository', () => {
             await repository.getRecentHires(5);
 
             const query = mockRequest.query.mock.calls[0][0];
-            expect(query).toContain('CAST(ReviewedDate AS DATE)');
+            expect(query).toContain('ReviewedDate');
+            expect(query).toContain('RunID = @runId');
         });
 
-        it('should order by StartDate, ReviewedDate, ContractorName', async () => {
+        it('should query from CMP_ReportDetails table', async () => {
             mockRequest.query.mockResolvedValue({ recordset: [] });
 
             await repository.getRecentHires(5);
 
             const query = mockRequest.query.mock.calls[0][0];
-            expect(query).toContain('ORDER BY StartDate, ReviewedDate, ContractorName');
+            expect(query).toContain('CMP_ReportDetails');
+            expect(query).toContain('where RunID');
         });
 
         it('should return empty array when no recent hires', async () => {
@@ -133,6 +136,14 @@ describe('HireDataRepository', () => {
             const result = await repository.getRecentHires(999);
 
             expect(result).toEqual([]);
+        });
+
+        it('should pass runId parameter', async () => {
+            mockRequest.query.mockResolvedValue({ recordset: [] });
+
+            await repository.getRecentHires(42);
+
+            expect(mockRequest.input).toHaveBeenCalledWith('runId', expect.anything(), 42);
         });
     });
 
@@ -334,6 +345,83 @@ describe('HireDataRepository', () => {
             expect(mockRequest.input).toHaveBeenCalledWith('endDate', expect.anything(), null);
             expect(mockRequest.input).toHaveBeenCalledWith('reviewedDate', expect.anything(), null);
             expect(mockRequest.input).toHaveBeenCalledWith('excludedComplianceRules', expect.anything(), null);
+        });
+        it('should return rows affected from database', async () => {
+            mockRequest.query.mockResolvedValue({ rowsAffected: [2] });
+
+            const hireData = {
+                employerId: 'EMP001',
+                contractorName: 'ABC Corp',
+                memberName: 'John Doe',
+                iaNumber: 'IA123',
+                startDate: '2025-01-15',
+                hireType: 'Union',
+                isReviewed: 1,
+                isExcluded: 0,
+                endDate: null,
+                contractorId: 100,
+                isInactive: 0,
+                reviewedDate: '2025-01-15',
+                excludedComplianceRules: null,
+                createdByUserName: 'user1',
+                createdByName: 'John Smith',
+                createdOn: '2025-01-15',
+            };
+
+            const result = await repository.createReviewedHire(hireData);
+
+            expect(result).toBe(2);
+        });
+    });
+
+    describe('Error Handling', () => {
+        it('should handle database query errors', async () => {
+            const error = new Error('Database connection failed');
+            mockRequest.query.mockRejectedValue(error);
+
+            await expect(repository.getHireData()).rejects.toThrow();
+        });
+
+        it('should handle null pool', () => {
+            expect(() => new HireDataRepository(null)).toThrow('Database pool is required');
+        });
+
+        it('should handle missing parameters in getHiresForContractor', async () => {
+            mockRequest.query.mockResolvedValue({ recordset: [] });
+
+            await repository.getHiresForContractor(100, '2025-01-15');
+
+            expect(mockRequest.input).toHaveBeenCalledWith('contractorId', expect.anything(), 100);
+            expect(mockRequest.input).toHaveBeenCalledWith('reviewedDate', expect.anything(), '2025-01-15');
+        });
+
+        it('should properly format dates in createReviewedHire', async () => {
+            mockRequest.query.mockResolvedValue({ rowsAffected: [1] });
+
+            const hireData = {
+                employerId: 'EMP001',
+                contractorName: 'ABC Corp',
+                memberName: 'John Doe',
+                iaNumber: 'IA123',
+                startDate: '2025-01-15',
+                hireType: 'Union',
+                isReviewed: 1,
+                isExcluded: 0,
+                endDate: '2025-12-31',
+                contractorId: 100,
+                isInactive: 0,
+                reviewedDate: '2025-01-15',
+                excludedComplianceRules: null,
+                createdByUserName: 'user1',
+                createdByName: 'John Smith',
+                createdOn: '2025-01-15',
+            };
+
+            await repository.createReviewedHire(hireData);
+
+            const query = mockRequest.query.mock.calls[0][0];
+            expect(query).toContain('CONVERT(DATETIME2(0), @startDate, 101)');
+            expect(query).toContain('CONVERT(DATETIME2(0), @createdOn, 101)');
         });
     });
 });

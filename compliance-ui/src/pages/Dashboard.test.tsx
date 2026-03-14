@@ -85,7 +85,7 @@ describe('Dashboard Page', () => {
                 { wrapper: createWrapper() }
             );
 
-            expect(screen.getByTestId('file-upload')).toBeInTheDocument();
+            expect(screen.getAllByTestId('file-upload').length).toBeGreaterThan(0);
             expect(screen.getByTestId('run-executor')).toBeInTheDocument();
         });
 
@@ -110,12 +110,13 @@ describe('Dashboard Page', () => {
 
     describe('FileUpload Integration', () => {
         it('should show alert on successful file upload', async () => {
-            const { } = render(
+            render(
                 <Dashboard />,
                 { wrapper: createWrapper() }
             );
 
-            const uploadButton = screen.getByText('Simulate Upload');
+            const fileUploadSection = screen.getAllByTestId('file-upload')[0];
+            const uploadButton = fileUploadSection.querySelector('button:first-child') as HTMLButtonElement;
             uploadButton.click();
 
             // Check that the button click was registered
@@ -128,7 +129,8 @@ describe('Dashboard Page', () => {
                 { wrapper: createWrapper() }
             );
 
-            const errorButton = screen.getByText('Simulate Error');
+            const fileUploadSection = screen.getAllByTestId('file-upload')[0];
+            const errorButton = fileUploadSection.querySelector('button:last-child') as HTMLButtonElement;
             errorButton.click();
 
             // Check that the button click was registered
@@ -210,9 +212,11 @@ describe('Dashboard Page', () => {
             const dashboard = container.querySelector('.dashboard');
             expect(dashboard).toBeInTheDocument();
 
-            // Check for main content areas
-            expect(screen.getByTestId('file-upload')).toBeInTheDocument();
-            expect(screen.getByTestId('run-executor')).toBeInTheDocument();
+            // Check for main content areas - use getAllByTestId since there are multiple
+            const fileUploads = screen.getAllByTestId('file-upload');
+            expect(fileUploads.length).toBeGreaterThan(0);
+            const runExecutors = screen.getAllByTestId('run-executor');
+            expect(runExecutors.length).toBeGreaterThan(0);
         });
     });
 });

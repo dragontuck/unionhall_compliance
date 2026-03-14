@@ -6,7 +6,6 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useImportHireData, useImportContractorSnapshots } from '../hooks';
-import { useApiClient } from '../providers';
 import { isValidCsvFile, extractErrorMessage } from '../utils';
 import { FileUploadDropZone, FileInfo } from './presentational';
 import '../styles/FileUpload.css';
@@ -24,13 +23,12 @@ export function FileUpload({
     onSuccess,
     onError
 }: FileUploadProps) {
-    const apiClient = useApiClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     // Use appropriate mutation hook based on endpoint
-    const hireDataMutation = useImportHireData(apiClient);
-    const contractorSnapshotMutation = useImportContractorSnapshots(apiClient);
+    const hireDataMutation = useImportHireData();
+    const contractorSnapshotMutation = useImportContractorSnapshots();
     const mutation = endpoint === '/api/import/hires' ? hireDataMutation : contractorSnapshotMutation;
 
     const handleDrag = useCallback((e: React.DragEvent) => {

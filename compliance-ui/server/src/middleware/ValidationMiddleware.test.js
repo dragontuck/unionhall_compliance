@@ -2,6 +2,7 @@
  * ValidationMiddleware.test.js - Unit tests for validation middleware
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { validateParams, validateBody, validateQuery } from '../../src/middleware/ValidationMiddleware.js';
 import { AppError } from '../../src/errors/AppError.js';
 
@@ -12,7 +13,7 @@ describe('ValidationMiddleware', () => {
         beforeEach(() => {
             req = { params: {} };
             res = {};
-            next = jest.fn();
+            next = vi.fn();
         });
 
         it('should pass validation for valid integer param', () => {
@@ -42,7 +43,7 @@ describe('ValidationMiddleware', () => {
         beforeEach(() => {
             req = { body: {} };
             res = {};
-            next = jest.fn();
+            next = vi.fn();
         });
 
         it('should pass validation for valid body', () => {
@@ -79,7 +80,7 @@ describe('ValidationMiddleware', () => {
         beforeEach(() => {
             req = { query: {} };
             res = {};
-            next = jest.fn();
+            next = vi.fn();
         });
 
         it('should pass validation for optional query params', () => {

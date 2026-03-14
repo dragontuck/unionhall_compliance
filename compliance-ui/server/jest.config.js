@@ -3,7 +3,7 @@
  * Configured for ES modules and code coverage
  */
 
-export default {
+module.exports = {
     testEnvironment: 'node',
     collectCoverageFrom: [
         'src/**/*.js',
@@ -24,5 +24,6 @@ export default {
     transform: {
         '^.+\\.js$': 'babel-jest',
     },
-    testPathIgnorePatterns: ['/node_modules/'],
+    testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+    modulePathIgnorePatterns: ['/dist/', '/node_modules/'],
 };

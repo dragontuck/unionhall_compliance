@@ -2,10 +2,11 @@
  * RunService.test.js - Unit tests for RunService
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RunService } from './RunService.js';
 import XLSX from 'xlsx';
 
-jest.mock('xlsx');
+vi.mock('xlsx');
 
 describe('RunService', () => {
     let service;
@@ -18,59 +19,62 @@ describe('RunService', () => {
 
     beforeEach(() => {
         mockRunRepo = {
-            getAllRuns: jest.fn(),
-            getRunById: jest.fn(),
-            createRun: jest.fn(),
-            getNextRunNumber: jest.fn(),
-            beginTransaction: jest.fn(),
-            commitTransaction: jest.fn(),
-            rollbackTransaction: jest.fn(),
-            updateRunOutput: jest.fn(),
+            getAllRuns: vi.fn(),
+            getRunById: vi.fn(),
+            createRun: vi.fn(),
+            getNextRunNumber: vi.fn(),
+            beginTransaction: vi.fn(),
+            commitTransaction: vi.fn(),
+            rollbackTransaction: vi.fn(),
+            updateRunOutput: vi.fn(),
         };
 
         mockModeRepo = {
-            getModeById: jest.fn(),
-            getAllModes: jest.fn(),
+            getModeById: vi.fn(),
+            getAllModes: vi.fn(),
         };
 
         mockReportRepo = {
-            getReportsByRun: jest.fn(),
+            getReportsByRun: vi.fn(),
         };
 
         mockDetailRepo = {
-            getDetailsByRun: jest.fn(),
-            getLast4Hires: jest.fn(),
+            getDetailsByRun: vi.fn(),
+            getLast4Hires: vi.fn(),
         };
 
         mockHireDataRepo = {
-            getRecentHires: jest.fn(),
+            getRecentHires: vi.fn(),
         };
 
         mockComplianceEngine = {
-            createComplianceState: jest.fn().mockReturnValue({
+            createComplianceState: vi.fn().mockReturnValue({
                 compliance: 0,
                 directCount: 0,
                 dispatchNeeded: 0,
                 nextHireDispatch: 'N'
             }),
-            applyHire: jest.fn(),
-            codeToStatus: jest.fn().mockReturnValue('Compliant'),
+            applyHire: vi.fn(),
+            codeToStatus: vi.fn().mockReturnValue('Compliant'),
         };
 
         service = new RunService(mockRunRepo, mockModeRepo, mockReportRepo, mockDetailRepo, mockHireDataRepo, mockComplianceEngine);
 
         // Mock XLSX
         XLSX.utils = {
-            book_new: jest.fn(() => ({})),
-            json_to_sheet: jest.fn(),
-            book_append_sheet: jest.fn(),
+            book_new: vi.fn(() => ({})),
+            json_to_sheet: vi.fn(),
+            aoa_to_sheet: vi.fn(),
+            book_append_sheet: vi.fn(),
+            decode_range: vi.fn(),
+            encode_cell: vi.fn(),
         };
-        XLSX.write = jest.fn(() => Buffer.from('test'));
+        XLSX.write = vi.fn(() => Buffer.from('test'));
 
         // Mock transaction object that can chain request().input().query()
         const mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         // Set up query to return default INSERT result with runId
@@ -81,7 +85,7 @@ describe('RunService', () => {
         });
 
         const mockTx = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
@@ -130,6 +134,35 @@ describe('RunService', () => {
     });
 
     describe('createRun', () => {
+        beforeEach(() => {
+            // Setup transaction mocks for createRun -> executeRun
+            const mockRequest = {
+                input: vi.fn().mockReturnThis(),
+                query: vi.fn(),
+            };
+
+            // Mock query responses for executeRun workflow
+            mockRequest.query
+                .mockResolvedValueOnce({
+                    recordset: [{ runId: 100 }],
+                    rowsAffected: [1],
+                }) // INSERT run
+                .mockResolvedValueOnce({
+                    recordset: [{ runId: 99 }],
+                }) // GET previous run
+                .mockResolvedValueOnce({
+                    recordset: [], // No contractors
+                }); // GET contractors
+
+            const mockTx = {
+                request: vi.fn().mockReturnValue(mockRequest),
+            };
+
+            mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
+            mockRunRepo.commitTransaction.mockResolvedValue(undefined);
+            mockRunRepo.rollbackTransaction.mockResolvedValue(undefined);
+        });
+
         it('should create a new run with generated run number', async () => {
             mockModeRepo.getModeById.mockResolvedValue({ id: 1, mode_value: 2, name: '2To1' });
             mockRunRepo.getNextRunNumber.mockResolvedValue(15);
@@ -176,6 +209,21 @@ describe('RunService', () => {
                 reviewedDate: '2025-01-15',
             })).rejects.toThrow('Mode 999 not found');
         });
+
+        it('should pass dryRun flag to executeRun', async () => {
+            mockModeRepo.getModeById.mockResolvedValue({ id: 1, mode_value: 2, name: '2To1' });
+            mockRunRepo.getNextRunNumber.mockResolvedValue(15);
+
+            const result = await service.createRun({
+                modeId: 1,
+                reviewedDate: '2025-01-15',
+                dryRun: true,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.runId).toBeNull(); // Dry run doesn't create runId
+            expect(result.message).toContain('Dry run');
+        });
     });
 
     describe('getRunForExport', () => {
@@ -196,8 +244,9 @@ describe('RunService', () => {
 
             expect(result).toBeInstanceOf(Buffer);
             expect(XLSX.utils.book_new).toHaveBeenCalled();
-            expect(XLSX.utils.json_to_sheet).toHaveBeenCalledTimes(4);
-            expect(XLSX.utils.book_append_sheet).toHaveBeenCalledTimes(4);
+            expect(XLSX.utils.json_to_sheet).toHaveBeenCalledTimes(3); // Details, Reports, Last 4
+            expect(XLSX.utils.aoa_to_sheet).toHaveBeenCalledTimes(1); // Recent Hire
+            expect(XLSX.utils.book_append_sheet).toHaveBeenCalledTimes(4); // All 4 sheets
             expect(XLSX.write).toHaveBeenCalled();
         });
 
@@ -222,5 +271,207 @@ describe('RunService', () => {
             expect(mockDetailRepo.getLast4Hires).toHaveBeenCalledWith(5);
             expect(mockHireDataRepo.getRecentHires).toHaveBeenCalledWith(5);
         });
+
+        it('should handle export with multiple records', async () => {
+            const run = { id: 1, modeId: 1 };
+            const reports = [
+                { id: 1, runId: 1, lastWedReported: new Date('2025-01-01') },
+                { id: 2, runId: 1, lastWedReported: new Date('2025-01-08') },
+            ];
+            const details = [
+                { id: 1, runId: 1, StartDate: new Date('2025-01-15') },
+                { id: 2, runId: 1, StartDate: new Date('2025-01-20') },
+            ];
+            const lastHires = [
+                { id: 1, runId: 1, StartDate: new Date('2025-01-15') },
+            ];
+            const recentHires = [
+                { 'Contractor Name': 'ABC Inc', 'Member Name': 'John Doe' },
+            ];
+
+            mockRunRepo.getRunById.mockResolvedValue(run);
+            mockReportRepo.getReportsByRun.mockResolvedValue(reports);
+            mockDetailRepo.getDetailsByRun.mockResolvedValue(details);
+            mockDetailRepo.getLast4Hires.mockResolvedValue(lastHires);
+            mockHireDataRepo.getRecentHires.mockResolvedValue(recentHires);
+
+            const result = await service.getRunForExport(1);
+
+            expect(result).toBeInstanceOf(Buffer);
+            expect(mockRunRepo.getRunById).toHaveBeenCalledWith(1);
+        });
+    });
+
+    describe('executeRun', () => {
+        beforeEach(() => {
+            // Reset mock for executeRun-specific tests
+            const mockRequest = {
+                input: vi.fn().mockReturnThis(),
+                query: vi.fn(),
+            };
+
+            // Set up various query responses for executeRun
+            mockRequest.query
+                .mockResolvedValueOnce({
+                    recordset: [{ runId: 100 }],
+                    rowsAffected: [1],
+                    recordsets: [[{ runId: 100 }]]
+                }) // First query - insert run
+                .mockResolvedValueOnce({
+                    recordset: [{ runId: 99 }],
+                }) // Second query - get previous run
+                .mockResolvedValueOnce({
+                    recordset: [], // No contractors
+                }); // Third query - get contractors
+
+            const mockTx = {
+                request: vi.fn().mockReturnValue(mockRequest),
+            };
+
+            mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
+        });
+
+        it('should successfully execute a run and return success result', async () => {
+            const result = await service.executeRun(1, 15, '2025-01-15', false, 2);
+
+            expect(result.success).toBe(true);
+            expect(result.runId).toBe(100);
+            expect(result.message).toContain('successfully');
+            expect(mockRunRepo.commitTransaction).toHaveBeenCalled();
+        });
+
+        it('should handle dry run mode without writing to database', async () => {
+            const result = await service.executeRun(1, 15, '2025-01-15', true, 2);
+
+            expect(result.success).toBe(true);
+            expect(result.runId).toBeNull();
+            expect(result.message).toContain('Dry run');
+            expect(mockRunRepo.rollbackTransaction).toHaveBeenCalled();
+        });
+
+        it('should handle transaction errors gracefully', async () => {
+            const mockRequest = {
+                input: vi.fn().mockReturnThis(),
+                query: vi.fn().mockRejectedValue(new Error('Database error')),
+            };
+
+            const mockTx = {
+                request: vi.fn().mockReturnValue(mockRequest),
+            };
+
+            mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
+
+            const result = await service.executeRun(1, 15, '2025-01-15', false, 2);
+
+            expect(result.success).toBe(false);
+            expect(result.runId).toBeNull();
+            expect(result.message).toContain('Error');
+            expect(mockRunRepo.rollbackTransaction).toHaveBeenCalled();
+        });
+
+        it('should use correct allowed direct count for mode', async () => {
+            // This test verifies the service passes the allowedDirect parameter
+            const result = await service.executeRun(2, 10, '2025-01-15', true, 3);
+
+            expect(result.success).toBe(true);
+            expect(mockRunRepo.rollbackTransaction).toHaveBeenCalled();
+        });
+
+        it('should handle beginTransaction failure', async () => {
+            mockRunRepo.beginTransaction.mockRejectedValue(new Error('Transaction init failed'));
+
+            const result = await service.executeRun(1, 15, '2025-01-15', false, 2);
+
+            expect(result.success).toBe(false);
+            expect(result.message).toContain('Transaction init failed');
+        });
+
+        it('should properly bind input parameters for run insertion', async () => {
+            const mockRequest = {
+                input: vi.fn().mockReturnThis(),
+                query: vi.fn()
+                    .mockResolvedValueOnce({ recordset: [{ runId: 100 }] })
+                    .mockResolvedValueOnce({ recordset: [] })
+                    .mockResolvedValueOnce({ recordset: [] }),
+            };
+
+            const mockTx = {
+                request: vi.fn().mockReturnValue(mockRequest),
+            };
+
+            mockRunRepo.beginTransaction.mockResolvedValue(mockTx);
+
+            await service.executeRun(5, 25, '2025-02-15', true, 2);
+
+            // Check that input() was called with expected parameters
+            expect(mockRequest.input).toHaveBeenCalledWith('reviewed', expect.anything(), '2025-02-15');
+            expect(mockRequest.input).toHaveBeenCalledWith('modeId', expect.anything(), 5);
+            expect(mockRequest.input).toHaveBeenCalledWith('runNum', expect.anything(), 25);
+        });
+    });
+
+    describe('_formatDatesInArray', () => {
+        it('should convert Date objects to ISO date strings', () => {
+            const data = [
+                {
+                    id: 1,
+                    StartDate: new Date('2025-01-15'),
+                    ReviewedDate: new Date('2025-01-20')
+                }
+            ];
+
+            const result = service._formatDatesInArray(data);
+
+            expect(result[0].StartDate).toBe('2025-01-15');
+            expect(result[0].ReviewedDate).toBe('2025-01-20');
+            expect(result[0].id).toBe(1);
+        });
+
+        it('should handle string dates in YYYY-MM-DD format', () => {
+            const data = [
+                {
+                    id: 1,
+                    StartDate: '2025-01-15T00:00:00.000Z',
+                    ReviewedDate: '2025-01-20'
+                }
+            ];
+
+            const result = service._formatDatesInArray(data);
+
+            expect(result[0].StartDate).toBe('2025-01-15');
+            expect(result[0].ReviewedDate).toBe('2025-01-20');
+        });
+
+        it('should use custom date fields if provided', () => {
+            const data = [
+                {
+                    id: 1,
+                    customDate: new Date('2025-01-15'),
+                    StartDate: new Date('2025-02-01')
+                }
+            ];
+
+            const result = service._formatDatesInArray(data, ['customDate']);
+
+            expect(result[0].customDate).toBe('2025-01-15');
+            expect(result[0].StartDate).toBeInstanceOf(Date);
+        });
+
+        it('should handle null and undefined date values', () => {
+            const data = [
+                {
+                    id: 1,
+                    StartDate: null,
+                    ReviewedDate: undefined
+                }
+            ];
+
+            const result = service._formatDatesInArray(data);
+
+            expect(result[0].StartDate).toBeNull();
+            expect(result[0].ReviewedDate).toBeUndefined();
+        });
     });
 });
+
+

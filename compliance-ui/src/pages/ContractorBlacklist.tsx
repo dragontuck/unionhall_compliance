@@ -1,16 +1,15 @@
 /**
  * ContractorBlacklist - Page component for managing contractor blacklist
  * Composition: Orchestrates child components
- * Single Responsibility: Only manages page-level state
+ * Single Responsibility: Only manages page-level logic and data orchestration
  */
 
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Edit2, Trash2, Loader, Plus } from 'lucide-react';
-import { useBlacklist } from '../hooks';
+import { useBlacklist, useAddDialog, useEditDialog, useDeleteDialog, useAlert } from '../hooks';
 import { DataTable } from '../components/DataTable';
 import { Alert, AlertDescription } from '../components/Alert';
-import { useAlert } from '../hooks';
 import type { ContractorBlacklist } from '../types';
 import '../styles/ContractorBlacklist.css';
 
@@ -19,95 +18,68 @@ const createQueryClient = () => new QueryClient();
 export function ContractorBlacklistPage() {
     const { alert, showAlert } = useAlert(2000);
     const [showDeleted, setShowDeleted] = useState(false);
-    const { blacklist, isLoading, error, createBlacklist, updateBlacklist, deleteBlacklist, isDeleting } = useBlacklist(showDeleted);
+    const { blacklist, isLoading, error, createBlacklist, updateBlacklist, deleteBlacklist } = useBlacklist(showDeleted);
 
-    // Add dialog state
-    const [showAddDialog, setShowAddDialog] = useState(false);
-    const [addForm, setAddForm] = useState<{ employerId: string; contractorName: string }>({ employerId: '', contractorName: '' });
-    const [isAdding, setIsAdding] = useState(false);
-    const [editingRecord, setEditingRecord] = useState<ContractorBlacklist | null>(null);
-    const [editForm, setEditForm] = useState<{ contractorName: string }>({ contractorName: '' });
-    const [isSaving, setIsSaving] = useState(false);
-
-    // Delete dialog state
-    const [deletingRecord, setDeletingRecord] = useState<ContractorBlacklist | null>(null);
+    // Dialog state management using extracted hooks
+    const addDialog = useAddDialog({ employerId: '', contractorName: '' });
+    const editDialog = useEditDialog<ContractorBlacklist, { contractorName: string }>();
+    const deleteDialog = useDeleteDialog<ContractorBlacklist>();
 
     const handleEditRecord = (record: ContractorBlacklist) => {
-        setEditingRecord(record);
-        setEditForm({ contractorName: record.ContractorName });
-    };
-
-    const handleCloseEdit = () => {
-        setEditingRecord(null);
-        setEditForm({ contractorName: '' });
+        editDialog.openDialog(record, { contractorName: record.ContractorName });
     };
 
     const handleSaveEdit = async () => {
-        if (!editingRecord) return;
-        setIsSaving(true);
+        if (!editDialog.record) return;
+        editDialog.setIsSubmitting(true);
         try {
             await updateBlacklist({
-                id: editingRecord.Id,
-                data: { contractorName: editForm.contractorName }
+                id: editDialog.record.Id,
+                data: { contractorName: editDialog.formData?.contractorName || '' }
             });
             showAlert('success', 'Contractor name updated successfully');
-            handleCloseEdit();
+            editDialog.closeDialog();
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update record';
             showAlert('error', message);
         } finally {
-            setIsSaving(false);
+            editDialog.setIsSubmitting(false);
         }
-    };
-
-    const handleDeleteRecord = (record: ContractorBlacklist) => {
-        setDeletingRecord(record);
     };
 
     const handleConfirmDelete = async () => {
-        if (!deletingRecord) return;
+        if (!deleteDialog.record) return;
+        deleteDialog.setIsSubmitting(true);
         try {
-            await deleteBlacklist(deletingRecord.Id);
+            await deleteBlacklist(deleteDialog.record.Id);
             showAlert('success', 'Contractor removed from blacklist');
-            setDeletingRecord(null);
+            deleteDialog.closeDialog();
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete record';
             showAlert('error', message);
+        } finally {
+            deleteDialog.setIsSubmitting(false);
         }
-    };
-
-    const handleCloseDelete = () => {
-        setDeletingRecord(null);
-    };
-
-    const handleOpenAddDialog = () => {
-        setShowAddDialog(true);
-        setAddForm({ employerId: '', contractorName: '' });
-    };
-
-    const handleCloseAddDialog = () => {
-        setShowAddDialog(false);
-        setAddForm({ employerId: '', contractorName: '' });
     };
 
     const handleAddBlacklist = async () => {
-        if (!addForm.employerId.trim() || !addForm.contractorName.trim()) {
+        if (!addDialog.formData.employerId.trim() || !addDialog.formData.contractorName.trim()) {
             showAlert('error', 'Employer ID and Contractor Name are required');
             return;
         }
-        setIsAdding(true);
+        addDialog.setIsSubmitting(true);
         try {
             await createBlacklist({
-                employerId: addForm.employerId.trim(),
-                contractorName: addForm.contractorName.trim()
+                employerId: addDialog.formData.employerId.trim(),
+                contractorName: addDialog.formData.contractorName.trim()
             });
             showAlert('success', 'Contractor added to blacklist');
-            handleCloseAddDialog();
+            addDialog.closeDialog();
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to add contractor';
             showAlert('error', message);
         } finally {
-            setIsAdding(false);
+            addDialog.setIsSubmitting(false);
         }
     };
 
@@ -148,7 +120,7 @@ export function ContractorBlacklistPage() {
                         </button>
                         <button
                             className="delete-btn"
-                            onClick={() => handleDeleteRecord(row)}
+                            onClick={() => deleteDialog.openDialog(row)}
                             title="Delete"
                             disabled={row.DeletedOn !== null}
                             style={{ opacity: row.DeletedOn !== null ? 0.5 : 1, cursor: row.DeletedOn !== null ? 'not-allowed' : 'pointer' }}
@@ -188,7 +160,7 @@ export function ContractorBlacklistPage() {
                         All Records
                     </button>
                 </div>
-                <button className="btn-add" onClick={handleOpenAddDialog}>
+                <button className="btn-add" onClick={addDialog.openDialog}>
                     <Plus size={18} />
                     Add Contractor
                 </button>
@@ -228,14 +200,14 @@ export function ContractorBlacklistPage() {
             </div>
 
             {/* Add Dialog */}
-            {showAddDialog && (
-                <div className="modal-overlay" onClick={handleCloseAddDialog}>
+            {addDialog.isOpen && (
+                <div className="modal-overlay" onClick={addDialog.closeDialog}>
                     <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Add Contractor to Blacklist</h2>
                             <button
                                 className="modal-close"
-                                onClick={handleCloseAddDialog}
+                                onClick={addDialog.closeDialog}
                                 aria-label="Close dialog"
                             >
                                 ✕
@@ -248,8 +220,8 @@ export function ContractorBlacklistPage() {
                                     <input
                                         id="add-employer-id"
                                         type="text"
-                                        value={addForm.employerId}
-                                        onChange={(e) => setAddForm({ ...addForm, employerId: e.target.value })}
+                                        value={addDialog.formData.employerId}
+                                        onChange={(e) => addDialog.setFormData({ ...addDialog.formData, employerId: e.target.value })}
                                         placeholder="Enter employer ID"
                                     />
                                 </div>
@@ -260,19 +232,19 @@ export function ContractorBlacklistPage() {
                                     <input
                                         id="add-contractor-name"
                                         type="text"
-                                        value={addForm.contractorName}
-                                        onChange={(e) => setAddForm({ ...addForm, contractorName: e.target.value })}
+                                        value={addDialog.formData.contractorName}
+                                        onChange={(e) => addDialog.setFormData({ ...addDialog.formData, contractorName: e.target.value })}
                                         placeholder="Enter contractor name"
                                     />
                                 </div>
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn-cancel" onClick={handleCloseAddDialog} disabled={isAdding}>
+                            <button className="btn-cancel" onClick={addDialog.closeDialog} disabled={addDialog.isSubmitting}>
                                 Cancel
                             </button>
-                            <button className="btn-save" onClick={handleAddBlacklist} disabled={isAdding}>
-                                {isAdding ? 'Adding...' : 'Add'}
+                            <button className="btn-save" onClick={handleAddBlacklist} disabled={addDialog.isSubmitting}>
+                                {addDialog.isSubmitting ? 'Adding...' : 'Add'}
                             </button>
                         </div>
                     </div>
@@ -280,14 +252,14 @@ export function ContractorBlacklistPage() {
             )}
 
             {/* Edit Dialog */}
-            {editingRecord && (
-                <div className="modal-overlay" onClick={handleCloseEdit}>
+            {editDialog.record && (
+                <div className="modal-overlay" onClick={editDialog.closeDialog}>
                     <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Edit Blacklist Entry</h2>
                             <button
                                 className="modal-close"
-                                onClick={handleCloseEdit}
+                                onClick={editDialog.closeDialog}
                                 aria-label="Close dialog"
                             >
                                 ✕
@@ -299,7 +271,7 @@ export function ContractorBlacklistPage() {
                                     <label>Employer ID</label>
                                     <input
                                         type="text"
-                                        value={editingRecord.EmployerID}
+                                        value={editDialog.record?.EmployerID || ''}
                                         disabled
                                         style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                                     />
@@ -311,18 +283,18 @@ export function ContractorBlacklistPage() {
                                     <input
                                         id="contractor-name"
                                         type="text"
-                                        value={editForm.contractorName}
-                                        onChange={(e) => setEditForm({ ...editForm, contractorName: e.target.value })}
+                                        value={editDialog.formData?.contractorName || ''}
+                                        onChange={(e) => editDialog.setFormData({ ...(editDialog.formData || { contractorName: '' }), contractorName: e.target.value })}
                                     />
                                 </div>
                             </div>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn-cancel" onClick={handleCloseEdit} disabled={isSaving}>
+                            <button className="btn-cancel" onClick={editDialog.closeDialog} disabled={editDialog.isSubmitting}>
                                 Cancel
                             </button>
-                            <button className="btn-save" onClick={handleSaveEdit} disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save'}
+                            <button className="btn-save" onClick={handleSaveEdit} disabled={editDialog.isSubmitting}>
+                                {editDialog.isSubmitting ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>
@@ -330,14 +302,14 @@ export function ContractorBlacklistPage() {
             )}
 
             {/* Delete Confirmation Dialog */}
-            {deletingRecord && (
-                <div className="modal-overlay" onClick={handleCloseDelete}>
+            {deleteDialog.record && (
+                <div className="modal-overlay" onClick={deleteDialog.closeDialog}>
                     <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>Remove from Blacklist</h2>
                             <button
                                 className="modal-close"
-                                onClick={handleCloseDelete}
+                                onClick={deleteDialog.closeDialog}
                                 aria-label="Close dialog"
                             >
                                 ✕
@@ -345,15 +317,15 @@ export function ContractorBlacklistPage() {
                         </div>
                         <div className="modal-body">
                             <p className="delete-confirmation">
-                                Are you sure you want to remove <strong>{deletingRecord.ContractorName}</strong> from the blacklist for employer <strong>{deletingRecord.EmployerID}</strong>?
+                                Are you sure you want to remove <strong>{deleteDialog.record?.ContractorName}</strong> from the blacklist for employer <strong>{deleteDialog.record?.EmployerID}</strong>?
                             </p>
                         </div>
                         <div className="modal-footer">
-                            <button className="btn-cancel" onClick={handleCloseDelete} disabled={isDeleting}>
+                            <button className="btn-cancel" onClick={deleteDialog.closeDialog} disabled={deleteDialog.isSubmitting}>
                                 Cancel
                             </button>
-                            <button className="btn-delete" onClick={handleConfirmDelete} disabled={isDeleting}>
-                                {isDeleting ? 'Removing...' : 'Remove'}
+                            <button className="btn-delete" onClick={handleConfirmDelete} disabled={deleteDialog.isSubmitting}>
+                                {deleteDialog.isSubmitting ? 'Removing...' : 'Remove'}
                             </button>
                         </div>
                     </div>

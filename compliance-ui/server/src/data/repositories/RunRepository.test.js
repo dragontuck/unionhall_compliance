@@ -2,6 +2,7 @@
  * RunRepository.test.js - Unit tests for RunRepository
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RunRepository } from './RunRepository.js';
 
 describe('RunRepository', () => {
@@ -11,24 +12,24 @@ describe('RunRepository', () => {
 
     beforeEach(() => {
         mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         mockPool = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         repository = new RunRepository(mockPool);
 
         // Spy on the methods so we can mock their return values
-        jest.spyOn(repository, 'query');
-        jest.spyOn(repository, 'queryOne');
-        jest.spyOn(repository, 'queryScalar');
+        vi.spyOn(repository, 'query');
+        vi.spyOn(repository, 'queryOne');
+        vi.spyOn(repository, 'queryScalar');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('getAllRuns', () => {

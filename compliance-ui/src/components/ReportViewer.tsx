@@ -2,13 +2,22 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, Loader, Edit2, Trash2 } from 'lucide-react';
-import { apiService } from '../services/api';
+import { useRunsApi, useHireDataApi, useReportDetailsApi, useReportsApi, useComplianceReportApi, useReportNotesApi, useExcelExportApi } from '../providers';
 import { DataTable } from './DataTable';
 import '../styles/ReportViewer.css';
 import type { ComplianceReport, ComplianceReportDetail, HireData, RecentHireData } from '../types';
 
 // Get runId from URL params
 export function ReportViewer() {
+    // Get API clients from context
+    const runsApi = useRunsApi();
+    const hireDataApi = useHireDataApi();
+    const reportDetailsApi = useReportDetailsApi();
+    const reportsApi = useReportsApi();
+    const complianceReportApi = useComplianceReportApi();
+    const reportNotesApi = useReportNotesApi();
+    const excelExportApi = useExcelExportApi();
+
     const { runId } = useParams();
     const initialRunId = runId ? Number(runId) : null;
     const [selectedRunId, setSelectedRunId] = useState<number | null>(initialRunId);
@@ -27,7 +36,7 @@ export function ReportViewer() {
     // Fetch all runs
     const { data: runs = [] } = useQuery({
         queryKey: ['runs'],
-        queryFn: () => apiService.getRuns(),
+        queryFn: () => runsApi.getRuns(),
     });
 
     // Get the selected run's reviewed date
@@ -42,7 +51,7 @@ export function ReportViewer() {
         isError: rawHiresError,
     } = useQuery({
         queryKey: ['rawHireData', selectedRunReviewedDate],
-        queryFn: () => apiService.getRawHireData(selectedRunReviewedDate),
+        queryFn: () => hireDataApi.getRawHireData(selectedRunReviewedDate),
         enabled: !!selectedRunId && !!selectedRunReviewedDate,
     });
 
@@ -53,7 +62,7 @@ export function ReportViewer() {
         isError: detailsError,
     } = useQuery({
         queryKey: ['reportDetails', selectedRunId],
-        queryFn: () => apiService.getReportDetailsByRun(selectedRunId!),
+        queryFn: () => reportDetailsApi.getReportDetailsByRun(selectedRunId!),
         enabled: !!selectedRunId,
     });
 
@@ -64,7 +73,7 @@ export function ReportViewer() {
         isError: reportsError,
     } = useQuery({
         queryKey: ['reports', selectedRunId],
-        queryFn: () => apiService.getReportsByRun(selectedRunId!),
+        queryFn: () => reportsApi.getReportsByRun(selectedRunId!),
         enabled: !!selectedRunId,
     });
 
@@ -75,7 +84,7 @@ export function ReportViewer() {
         isError: lastHiresError,
     } = useQuery({
         queryKey: ['lastHires', selectedRunId],
-        queryFn: () => apiService.getLastHiresByRun(selectedRunId!),
+        queryFn: () => reportDetailsApi.getLastHiresByRun(selectedRunId!),
         enabled: !!selectedRunId,
     });
 
@@ -86,7 +95,7 @@ export function ReportViewer() {
         isError: recentHiresError,
     } = useQuery({
         queryKey: ['recentHires', selectedRunId],
-        queryFn: () => apiService.getRecentHiresByRun(selectedRunId!),
+        queryFn: () => reportDetailsApi.getRecentHiresByRun(selectedRunId!),
         enabled: !!selectedRunId,
     });
 
@@ -117,7 +126,7 @@ export function ReportViewer() {
         if (!editingRecord || !editForm) return;
         setIsSaving(true);
         try {
-            await apiService.updateComplianceReport(editingRecord.id, {
+            await complianceReportApi.updateComplianceReport(editingRecord.id, {
                 employerId: editingRecord.employerId,
                 directCount: editForm.directCount,
                 dispatchNeeded: editForm.dispatchNeeded,
@@ -141,7 +150,7 @@ export function ReportViewer() {
         if (!deletingRecord || !deleteForm) return;
         setIsSaving(true);
         try {
-            await apiService.deleteComplianceReport(deletingRecord.id, {
+            await complianceReportApi.deleteComplianceReport(deletingRecord.id, {
                 employerId: deletingRecord.employerId,
                 note: deleteForm.note,
                 changedBy: deleteForm.changedBy,
@@ -170,7 +179,7 @@ export function ReportViewer() {
         setViewingNotes(record);
         setIsLoadingNotes(true);
         try {
-            const notes = await apiService.getNotesByEmployerId(record.employerId);
+            const notes = await reportNotesApi.getNotesByEmployerId(record.employerId);
             console.log('Notes loaded:', notes);
             setNotesData(notes);
         } catch (error) {
@@ -190,7 +199,7 @@ export function ReportViewer() {
         if (!selectedRunId) return;
         setDownloadError(null);
         try {
-            const blob = await apiService.exportRunToExcel(selectedRunId);
+            const blob = await excelExportApi.exportRunToExcel(selectedRunId);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -264,6 +273,8 @@ export function ReportViewer() {
                 </div>
             )
         },
+        { key: 'lastWedReported', label: 'Last WED Reported', sortable: true },
+        { key: 'snapshotWed', label: 'Snapshot WED', sortable: true },
         { key: 'complianceStatus', label: 'Status', sortable: true },
         { key: 'directCount', label: 'Direct Count', sortable: true },
         { key: 'dispatchNeeded', label: 'Dispatch Needed', sortable: true },

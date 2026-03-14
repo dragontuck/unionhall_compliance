@@ -2,19 +2,22 @@
  * routes.test.js - Unit tests for route definitions
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import {
     defineHealthRoutes,
     defineRunRoutes,
     defineReportRoutes,
     defineModeRoutes,
-    defineHireDataRoutes
+    defineHireDataRoutes,
+    defineContractorSnapshotRoutes,
+    defineBlacklistRoutes,
 } from './index.js';
 
-jest.mock('../middleware/ValidationMiddleware.js', () => ({
-    validateParams: jest.fn().mockReturnValue((req, res, next) => next()),
-    validateQuery: jest.fn().mockReturnValue((req, res, next) => next()),
-    validateBody: jest.fn().mockReturnValue((req, res, next) => next()),
+vi.mock('../middleware/ValidationMiddleware.js', () => ({
+    validateParams: vi.fn().mockReturnValue((req, res, next) => next()),
+    validateQuery: vi.fn().mockReturnValue((req, res, next) => next()),
+    validateBody: vi.fn().mockReturnValue((req, res, next) => next()),
 }));
 
 describe('Route Definitions', () => {
@@ -46,22 +49,28 @@ describe('Route Definitions', () => {
             expect(healthLayer.route.methods.get).toBe(true);
         });
 
-        it('should return status json', (done) => {
+        it('should return status json', () => {
             defineHealthRoutes(router);
 
             const app = express();
             app.use(router);
 
-            const mockRes = {
-                json: jest.fn((data) => {
-                    expect(data).toHaveProperty('status', 'healthy');
-                    expect(data).toHaveProperty('timestamp');
-                    done();
-                }),
-            };
+            return new Promise((resolve, reject) => {
+                const mockRes = {
+                    json: vi.fn((data) => {
+                        try {
+                            expect(data).toHaveProperty('status', 'healthy');
+                            expect(data).toHaveProperty('timestamp');
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }),
+                };
 
-            const healthHandler = router.stack.find(layer => layer.route && layer.route.path === '/health').route.stack[0].handle;
-            healthHandler({}, mockRes);
+                const healthHandler = router.stack.find(layer => layer.route && layer.route.path === '/health').route.stack[0].handle;
+                healthHandler({}, mockRes);
+            });
         });
     });
 
@@ -70,11 +79,11 @@ describe('Route Definitions', () => {
 
         beforeEach(() => {
             mockController = {
-                getAllRuns: jest.fn(),
-                getRunById: jest.fn(),
-                createRun: jest.fn(),
-                exportRun: jest.fn(),
-                exportData: jest.fn(),
+                getAllRuns: vi.fn(),
+                getRunById: vi.fn(),
+                createRun: vi.fn(),
+                exportRun: vi.fn(),
+                exportData: vi.fn(),
             };
         });
 
@@ -136,14 +145,15 @@ describe('Route Definitions', () => {
 
         beforeEach(() => {
             mockController = {
-                getReports: jest.fn(),
-                getReportsByRun: jest.fn(),
-                getReportDetails: jest.fn(),
-                getReportDetailsByRun: jest.fn(),
-                updateReport: jest.fn(),
-                getLast4Hires: jest.fn(),
-                getNotesByReport: jest.fn(),
-                getNotesByEmployer: jest.fn(),
+                getReports: vi.fn(),
+                getReportsByRun: vi.fn(),
+                getReportDetails: vi.fn(),
+                getReportDetailsByRun: vi.fn(),
+                updateReport: vi.fn(),
+                getLast4Hires: vi.fn(),
+                getNotesByReport: vi.fn(),
+                getNotesByEmployer: vi.fn(),
+                deleteReport: vi.fn(),
             };
         });
 
@@ -170,6 +180,15 @@ describe('Route Definitions', () => {
 
             const hasRoute = router.stack.some(layer =>
                 layer.route && layer.route.path === '/report-details' && layer.route.methods.get
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define getReportDetailsByRun route', () => {
+            defineReportRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/report-details/run/:runId'
             );
             expect(hasRoute).toBe(true);
         });
@@ -205,6 +224,15 @@ describe('Route Definitions', () => {
             expect(hasReportNotes).toBe(true);
             expect(hasEmployerNotes).toBe(true);
         });
+
+        it('should define deleteReport route with POST method', () => {
+            defineReportRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/reports/:reportId/delete' && layer.route.methods.post
+            );
+            expect(hasRoute).toBe(true);
+        });
     });
 
     describe('defineModeRoutes', () => {
@@ -212,8 +240,8 @@ describe('Route Definitions', () => {
 
         beforeEach(() => {
             mockController = {
-                getAllModes: jest.fn(),
-                getModeById: jest.fn(),
+                getAllModes: vi.fn(),
+                getModeById: vi.fn(),
             };
         });
 
@@ -242,12 +270,12 @@ describe('Route Definitions', () => {
 
         beforeEach(() => {
             mockController = {
-                getHireData: jest.fn(),
-                getRecentHires: jest.fn(),
-                importHires: jest.fn(),
+                getHireData: vi.fn(),
+                getRecentHires: vi.fn(),
+                importHires: vi.fn(),
             };
             mockUpload = {
-                single: jest.fn().mockReturnValue((req, res, next) => next()),
+                single: vi.fn().mockReturnValue((req, res, next) => next()),
             };
         });
 
@@ -290,6 +318,154 @@ describe('Route Definitions', () => {
             expect(mockController.getHireData).toBeDefined();
             expect(mockController.getRecentHires).toBeDefined();
             expect(mockController.importHires).toBeDefined();
+        });
+    });
+
+    describe('defineContractorSnapshotRoutes', () => {
+        let mockController;
+        let mockUpload;
+
+        beforeEach(() => {
+            mockController = {
+                getContractorSnapshots: vi.fn(),
+                importContractorSnapshots: vi.fn(),
+            };
+            mockUpload = {
+                single: vi.fn().mockReturnValue((req, res, next) => next()),
+            };
+        });
+
+        it('should define getContractorSnapshots route', () => {
+            defineContractorSnapshotRoutes(router, mockController, mockUpload);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/contractor-snapshots' && layer.route.methods.get
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define importContractorSnapshots route with POST method', () => {
+            defineContractorSnapshotRoutes(router, mockController, mockUpload);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/import/contractor-snapshots' && layer.route.methods.post
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should use upload middleware for import route', () => {
+            defineContractorSnapshotRoutes(router, mockController, mockUpload);
+
+            expect(mockUpload.single).toHaveBeenCalledWith('file');
+        });
+
+        it('should call controller methods', () => {
+            defineContractorSnapshotRoutes(router, mockController, mockUpload);
+
+            expect(mockController.getContractorSnapshots).toBeDefined();
+            expect(mockController.importContractorSnapshots).toBeDefined();
+        });
+    });
+
+    describe('defineBlacklistRoutes', () => {
+        let mockController;
+
+        beforeEach(() => {
+            mockController = {
+                getAll: vi.fn(),
+                getAllIncludingDeleted: vi.fn(),
+                getById: vi.fn(),
+                getByEmployerId: vi.fn(),
+                checkBlacklist: vi.fn(),
+                create: vi.fn(),
+                update: vi.fn(),
+                delete: vi.fn(),
+            };
+        });
+
+        it('should define getAll route', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist' && layer.route.methods.get
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define getAllIncludingDeleted route', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/all' && layer.route.methods.get
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define getById route with parameter validation', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/:id'
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define getByEmployerId route', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/employer/:employerId'
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define checkBlacklist route with POST method', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/check' && layer.route.methods.post
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define create route with POST method', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist' && layer.route.methods.post
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define update route with PUT method', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/:id' && layer.route.methods.put
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should define delete route with DELETE method', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            const hasRoute = router.stack.some(layer =>
+                layer.route && layer.route.path === '/blacklist/:id' && layer.route.methods.delete
+            );
+            expect(hasRoute).toBe(true);
+        });
+
+        it('should call all controller methods', () => {
+            defineBlacklistRoutes(router, mockController);
+
+            expect(mockController.getAll).toBeDefined();
+            expect(mockController.getAllIncludingDeleted).toBeDefined();
+            expect(mockController.getById).toBeDefined();
+            expect(mockController.getByEmployerId).toBeDefined();
+            expect(mockController.checkBlacklist).toBeDefined();
+            expect(mockController.create).toBeDefined();
+            expect(mockController.update).toBeDefined();
+            expect(mockController.delete).toBeDefined();
         });
     });
 });

@@ -2,6 +2,7 @@
  * ReportService.test.js - Unit tests for ReportService
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReportService } from './ReportService.js';
 
 describe('ReportService', () => {
@@ -12,22 +13,22 @@ describe('ReportService', () => {
 
     beforeEach(() => {
         mockReportRepo = {
-            getReports: jest.fn(),
-            getReportsByRun: jest.fn(),
-            getReportById: jest.fn(),
-            updateReport: jest.fn(),
+            getReports: vi.fn(),
+            getReportsByRun: vi.fn(),
+            getReportById: vi.fn(),
+            updateReport: vi.fn(),
         };
 
         mockDetailRepo = {
-            getDetailsByRun: jest.fn(),
-            updateDetail: jest.fn(),
+            getDetailsByRun: vi.fn(),
+            updateDetail: vi.fn(),
         };
 
         mockNoteRepo = {
-            getNotesByReport: jest.fn(),
-            getNotesByEmployer: jest.fn(),
-            addNote: jest.fn(),
-            createNote: jest.fn(),
+            getNotesByReport: vi.fn(),
+            getNotesByEmployer: vi.fn(),
+            addNote: vi.fn(),
+            createNote: vi.fn(),
         };
 
         service = new ReportService(mockReportRepo, mockDetailRepo, mockNoteRepo);

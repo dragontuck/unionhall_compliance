@@ -2,6 +2,7 @@
  * ModeRepository.test.js - Unit tests for ModeRepository
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ModeRepository } from './ModeRepository.js';
 
 describe('ModeRepository', () => {
@@ -11,23 +12,23 @@ describe('ModeRepository', () => {
 
     beforeEach(() => {
         mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         mockPool = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         repository = new ModeRepository(mockPool);
 
         // Spy on the methods so we can mock their return values
-        jest.spyOn(repository, 'query');
-        jest.spyOn(repository, 'queryOne');
+        vi.spyOn(repository, 'query');
+        vi.spyOn(repository, 'queryOne');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('getAllModes', () => {

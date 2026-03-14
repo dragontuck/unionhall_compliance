@@ -1,5 +1,6 @@
 /**
- * IApiClient - Interface for API interactions
+ * Feature-specific API interfaces - Interface Segregation Principle
+ * Clients depend only on interfaces they actually use
  * Dependency Inversion Principle: Depend on abstractions, not concrete implementations
  */
 
@@ -16,25 +17,43 @@ import type {
     ContractorBlacklist,
 } from '../../types';
 
-export interface IApiClient {
-    // Runs
+/**
+ * IRunsAPI - Compliance run operations
+ * Clients: Dashboard, Reports
+ */
+export interface IRunsAPI {
     getRuns(filters?: { reviewedDate?: string; modeId?: number }): Promise<ComplianceRun[]>;
     getRunById(runId: number): Promise<ComplianceRun>;
     executeRun(request: RunRequest): Promise<ComplianceRun>;
+}
 
-    // Import
+/**
+ * IImportAPI - Data import operations
+ * Clients: Dashboard (FileUpload component)
+ */
+export interface IImportAPI {
     importHireData(file: File): Promise<{ message: string; rowsImported: number }>;
     importContractorSnapshots(file: File): Promise<{ message: string; rowsImported: number }>;
+}
 
-    // Reports
+/**
+ * IReportsAPI - Report retrieval and filtering
+ * Clients: Reports page, ReportViewer
+ */
+export interface IReportsAPI {
     getReports(filters?: {
         runId?: number;
         contractorId?: number;
         employerId?: string;
     }): Promise<ComplianceReport[]>;
     getReportsByRun(runId: number): Promise<ComplianceReport[]>;
+}
 
-    // Report Details
+/**
+ * IReportDetailsAPI - Detailed report data
+ * Clients: Reports page, ReportViewer
+ */
+export interface IReportDetailsAPI {
     getReportDetails(filters?: {
         runId?: number;
         contractorId?: number;
@@ -44,26 +63,49 @@ export interface IApiClient {
     getReportDetailsByRun(runId: number): Promise<ComplianceReportDetail[]>;
     getLastHiresByRun(runId: number): Promise<ComplianceReportDetail[]>;
     getRecentHiresByRun(runId: number): Promise<RecentHireData[]>;
-
-    // Report Summary
     getRunReport(runId: number): Promise<ComplianceReport[]>;
+}
 
-    // Report Notes
+/**
+ * IReportNotesAPI - Report note retrieval
+ * Clients: Reports page
+ */
+export interface IReportNotesAPI {
     getReportNotesByReportId(reportId: number): Promise<ReportNote[]>;
     getReportNotesByEmployerId(employerId: string): Promise<ReportNote[]>;
     getNotesByEmployerId(employerId: string): Promise<ReportNote[]>;
+}
 
-    // Raw Hire Data
+/**
+ * IHireDataAPI - Raw hire data access
+ * Clients: Dashboard
+ */
+export interface IHireDataAPI {
     getRawHireData(reviewedDate?: string): Promise<HireData[]>;
+}
 
-    // Modes
+/**
+ * IModeAPI - Compliance mode retrieval
+ * Clients: Dashboard (RunExecutor)
+ */
+export interface IModeAPI {
     getModes(): Promise<Mode[]>;
+}
 
-    // Excel Export
+/**
+ * IExcelExportAPI - Excel export operations
+ * Clients: Reports page (ReportViewer)
+ */
+export interface IExcelExportAPI {
     exportRunToExcel(runId: number): Promise<Blob>;
     getExcelExportData(runId: number): Promise<ExcelExportData>;
+}
 
-    // Update
+/**
+ * IComplianceReportAPI - Compliance report modifications
+ * Clients: Reports page (ReportViewer)
+ */
+export interface IComplianceReportAPI {
     updateComplianceReport(
         reportDetailId: number,
         updates: {
@@ -82,9 +124,15 @@ export interface IApiClient {
             employerId?: string;
             note?: string;
             changedBy?: string;
-        }): Promise<void>;
+        }
+    ): Promise<void>;
+}
 
-    // Contractor Blacklist
+/**
+ * IBlacklistAPI - Contractor blacklist operations
+ * Clients: ContractorBlacklist page
+ */
+export interface IBlacklistAPI {
     getBlacklist(): Promise<ContractorBlacklist[]>;
     getBlacklistIncludingDeleted(): Promise<ContractorBlacklist[]>;
     getBlacklistById(id: number): Promise<ContractorBlacklist>;
@@ -101,3 +149,20 @@ export interface IApiClient {
     ): Promise<ContractorBlacklist>;
     deleteBlacklist(id: number): Promise<ContractorBlacklist>;
 }
+
+/**
+ * IApiClient - Composite interface combining all API operations
+ * For backward compatibility and full API access
+ * Note: Consider whether clients actually need the full interface
+ */
+export interface IApiClient
+    extends IRunsAPI,
+    IImportAPI,
+    IReportsAPI,
+    IReportDetailsAPI,
+    IReportNotesAPI,
+    IHireDataAPI,
+    IModeAPI,
+    IExcelExportAPI,
+    IComplianceReportAPI,
+    IBlacklistAPI { }

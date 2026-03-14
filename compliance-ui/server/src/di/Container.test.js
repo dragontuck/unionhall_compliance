@@ -2,6 +2,7 @@
  * Container.test.js - Unit tests for Dependency Injection Container
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Container } from './Container.js';
 
 describe('Container (Dependency Injection)', () => {
@@ -9,7 +10,7 @@ describe('Container (Dependency Injection)', () => {
     let mockPool;
 
     beforeEach(() => {
-        mockPool = { request: jest.fn() };
+        mockPool = { request: vi.fn() };
         container = new Container(mockPool);
     });
 
@@ -73,7 +74,7 @@ describe('Container (Dependency Injection)', () => {
         });
 
         it('should update the database pool', () => {
-            const newPool = { request: jest.fn() };
+            const newPool = { request: vi.fn() };
             container.setPool(newPool);
 
             expect(container.dbPool).toBe(newPool);
@@ -82,7 +83,7 @@ describe('Container (Dependency Injection)', () => {
         it('should reinitialize repository with new pool', () => {
             const oldRepository = container.resolve('repository');
 
-            const newPool = { request: jest.fn() };
+            const newPool = { request: vi.fn() };
             container.setPool(newPool);
 
             // After setPool, repository should be recreated with new pool
@@ -95,7 +96,7 @@ describe('Container (Dependency Injection)', () => {
             const oldRunService = container.resolve('runService');
             const oldReportService = container.resolve('reportService');
 
-            const newPool = { request: jest.fn() };
+            const newPool = { request: vi.fn() };
             container.setPool(newPool);
 
             // Services should be recreated with new pool
@@ -127,7 +128,7 @@ describe('Container (Dependency Injection)', () => {
             });
 
             // Update pool
-            const newPool = { request: jest.fn() };
+            const newPool = { request: vi.fn() };
             container.setPool(newPool);
 
             // All should be recreated (different instances)

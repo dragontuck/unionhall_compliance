@@ -6,7 +6,6 @@
 
 import { useState, useCallback } from 'react';
 import { useModes, useExecuteRun } from '../hooks';
-import { useApiClient } from '../providers';
 import { extractErrorMessage } from '../utils';
 import { RunExecutorForm } from './presentational';
 
@@ -16,13 +15,12 @@ interface RunExecutorProps {
 }
 
 export function RunExecutor({ onSuccess, onError }: RunExecutorProps) {
-    const apiClient = useApiClient();
     const [reviewedDate, setReviewedDate] = useState('');
     const [modeId, setModeId] = useState<number | string>('');
     const [dryRun, setDryRun] = useState(false);
 
-    const { data: modes = [] } = useModes(apiClient);
-    const mutation = useExecuteRun(apiClient);
+    const { data: modes = [] } = useModes();
+    const mutation = useExecuteRun();
 
     const handleExecute = useCallback(() => {
         if (!reviewedDate || !modeId) {

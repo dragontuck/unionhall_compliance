@@ -1,38 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import { useRawHireData, useRecentHiresByRun } from './useHireData';
+import { createTestWrapper, createMockApiClient } from '../setupTestUtils';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 
 describe('useHireData hooks', () => {
     let mockApiClient: Partial<IApiClient>;
 
     beforeEach(() => {
-        mockApiClient = {
-            getRawHireData: vi.fn(),
-            getRecentHiresByRun: vi.fn(),
-        };
+        mockApiClient = createMockApiClient();
     });
-
-    const createWrapper = () => {
-        const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-        });
-        const Wrapper = ({ children }: { children: ReactNode }) => {
-            const createElement = require('react').createElement;
-            return createElement(QueryClientProvider, { client: queryClient }, children);
-        };
-        return Wrapper;
-    };
 
     describe('useRawHireData', () => {
         it('should not fetch when reviewedDate is undefined', () => {
             (mockApiClient.getRawHireData as any).mockResolvedValue([]);
 
             const { result } = renderHook(
-                () => useRawHireData(mockApiClient as IApiClient, undefined),
-                { wrapper: createWrapper() }
+                () => useRawHireData(undefined),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(mockApiClient.getRawHireData).not.toHaveBeenCalled();
@@ -47,8 +32,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRawHireData as any).mockResolvedValue(mockData);
 
             const { result } = renderHook(
-                () => useRawHireData(mockApiClient as IApiClient, '2024-01-15'),
-                { wrapper: createWrapper() }
+                () => useRawHireData('2024-01-15'),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -68,8 +53,8 @@ describe('useHireData hooks', () => {
                 .mockResolvedValueOnce(mockData2);
 
             const { result, rerender } = renderHook(
-                ({ date }: { date?: string }) => useRawHireData(mockApiClient as IApiClient, date),
-                { initialProps: { date: '2024-01-15' }, wrapper: createWrapper() }
+                ({ date }: { date?: string }) => useRawHireData(date),
+                { initialProps: { date: '2024-01-15' }, wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -90,8 +75,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRawHireData as any).mockRejectedValue(error);
 
             const { result } = renderHook(
-                () => useRawHireData(mockApiClient as IApiClient, '2024-01-15'),
-                { wrapper: createWrapper() }
+                () => useRawHireData('2024-01-15'),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -103,8 +88,8 @@ describe('useHireData hooks', () => {
 
         it('should return empty array by default', () => {
             const { result } = renderHook(
-                () => useRawHireData(mockApiClient as IApiClient, undefined),
-                { wrapper: createWrapper() }
+                () => useRawHireData(undefined),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             // Data is undefined when query is disabled, not an empty array
@@ -117,8 +102,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRecentHiresByRun as any).mockResolvedValue([]);
 
             const { result } = renderHook(
-                () => useRecentHiresByRun(mockApiClient as IApiClient, null),
-                { wrapper: createWrapper() }
+                () => useRecentHiresByRun(null),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(result.current.isLoading).toBe(false);
@@ -131,8 +116,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRecentHiresByRun as any).mockResolvedValue(mockData);
 
             const { result } = renderHook(
-                () => useRecentHiresByRun(mockApiClient as IApiClient, 1),
-                { wrapper: createWrapper() }
+                () => useRecentHiresByRun(1),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -153,8 +138,8 @@ describe('useHireData hooks', () => {
 
             const { result, rerender } = renderHook(
                 ({ runId }: { runId: number | null }) =>
-                    useRecentHiresByRun(mockApiClient as IApiClient, runId),
-                { initialProps: { runId: 1 }, wrapper: createWrapper() }
+                    useRecentHiresByRun(runId),
+                { initialProps: { runId: 1 }, wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -174,8 +159,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRecentHiresByRun as any).mockResolvedValue([]);
 
             const { result } = renderHook(
-                () => useRecentHiresByRun(mockApiClient as IApiClient, 1),
-                { wrapper: createWrapper() }
+                () => useRecentHiresByRun(1),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -190,8 +175,8 @@ describe('useHireData hooks', () => {
             (mockApiClient.getRecentHiresByRun as any).mockRejectedValue(error);
 
             const { result } = renderHook(
-                () => useRecentHiresByRun(mockApiClient as IApiClient, 1),
-                { wrapper: createWrapper() }
+                () => useRecentHiresByRun(1),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {

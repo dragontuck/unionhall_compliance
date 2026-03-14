@@ -1,31 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import { useExecuteRun, useImportHireData, useUpdateComplianceReport } from './useMutations';
+import { createTestWrapper, createMockApiClient } from '../setupTestUtils';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 
 describe('useMutations hooks', () => {
     let mockApiClient: Partial<IApiClient>;
 
     beforeEach(() => {
-        mockApiClient = {
-            executeRun: vi.fn(),
-            importHireData: vi.fn(),
-            updateComplianceReport: vi.fn(),
-        };
+        mockApiClient = createMockApiClient();
     });
-
-    const createWrapper = () => {
-        const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-        });
-        const Wrapper = ({ children }: { children: ReactNode }) => {
-            const createElement = require('react').createElement;
-            return createElement(QueryClientProvider, { client: queryClient }, children);
-        };
-        return Wrapper;
-    };
 
     describe('useExecuteRun', () => {
         it('should execute run with correct parameters', async () => {
@@ -33,8 +17,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.executeRun as any).mockResolvedValue(mockResponse);
 
             const { result } = renderHook(
-                () => useExecuteRun(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useExecuteRun(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             result.current.mutate(
@@ -58,8 +42,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.executeRun as any).mockResolvedValue(mockResponse);
 
             const { result } = renderHook(
-                () => useExecuteRun(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useExecuteRun(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             result.current.mutate(
@@ -82,8 +66,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.executeRun as any).mockRejectedValue(error);
 
             const { result } = renderHook(
-                () => useExecuteRun(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useExecuteRun(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             result.current.mutate(
@@ -107,8 +91,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.importHireData as any).mockResolvedValue(mockResponse);
 
             const { result } = renderHook(
-                () => useImportHireData(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useImportHireData(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const file = new File(['test data'], 'data.csv', { type: 'text/csv' });
@@ -131,8 +115,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.importHireData as any).mockRejectedValue(error);
 
             const { result } = renderHook(
-                () => useImportHireData(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useImportHireData(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const file = new File(['invalid'], 'data.csv', { type: 'text/csv' });
@@ -155,8 +139,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.updateComplianceReport as any).mockResolvedValue(mockResponse);
 
             const { result } = renderHook(
-                () => useUpdateComplianceReport(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useUpdateComplianceReport(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const updates = { status: 'compliant', notes: 'Updated notes' };
@@ -182,8 +166,8 @@ describe('useMutations hooks', () => {
             (mockApiClient.updateComplianceReport as any).mockRejectedValue(error);
 
             const { result } = renderHook(
-                () => useUpdateComplianceReport(mockApiClient as IApiClient),
-                { wrapper: createWrapper() }
+                () => useUpdateComplianceReport(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             result.current.mutate(
@@ -204,22 +188,9 @@ describe('useMutations hooks', () => {
             const mockResponse = { id: 1, status: 'updated' };
             (mockApiClient.updateComplianceReport as any).mockResolvedValue(mockResponse);
 
-            const queryClient = new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-            });
-
-            // Pre-populate cache to verify invalidation
-            queryClient.setQueryData(['reportDetails'], [{ id: 1 }]);
-            queryClient.setQueryData(['reports'], [{ id: 1 }]);
-
             const { result } = renderHook(
-                () => useUpdateComplianceReport(mockApiClient as IApiClient),
-                {
-                    wrapper: ({ children }: { children: ReactNode }) => {
-                        const createElement = require('react').createElement;
-                        return createElement(QueryClientProvider, { client: queryClient }, children);
-                    },
-                }
+                () => useUpdateComplianceReport(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             result.current.mutate({ reportDetailId: 1, updates: { status: 'updated' } });

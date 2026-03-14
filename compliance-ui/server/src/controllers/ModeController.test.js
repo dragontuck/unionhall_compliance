@@ -2,6 +2,7 @@
  * ModeController.test.js - Unit tests for ModeController
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ModeController } from './ModeController.js';
 
 describe('ModeController', () => {
@@ -11,8 +12,8 @@ describe('ModeController', () => {
 
     beforeEach(() => {
         mockModeService = {
-            getAllModes: jest.fn(),
-            getModeById: jest.fn(),
+            getAllModes: vi.fn(),
+            getModeById: vi.fn(),
         };
 
         controller = new ModeController(mockModeService);
@@ -23,8 +24,8 @@ describe('ModeController', () => {
         };
 
         res = {
-            json: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            status: vi.fn().mockReturnThis(),
         };
     });
 

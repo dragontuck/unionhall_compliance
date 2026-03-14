@@ -1,31 +1,27 @@
 /**
- * useHireData - Hook for managing hire data
- * Single Responsibility Principle: Only handles hire-related queries
+ * useHireData - Hooks for managing hire data
+ * Dependency Inversion: Uses specialized IHireDataAPI and IReportDetailsAPI via context
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { IApiClient } from '../services/interfaces/IApiClient';
+import { useHireDataApi, useReportDetailsApi } from '../providers';
 
-export function useRawHireData(
-    apiClient: IApiClient,
-    reviewedDate?: string
-) {
+export function useRawHireData(reviewedDate?: string) {
+    const hireDataApi = useHireDataApi();
     return useQuery({
         queryKey: ['rawHireData', reviewedDate],
-        queryFn: () => apiClient.getRawHireData(reviewedDate),
+        queryFn: () => hireDataApi.getRawHireData(reviewedDate),
         enabled: !!reviewedDate,
     });
 }
 
-export function useRecentHiresByRun(
-    apiClient: IApiClient,
-    runId: number | null
-) {
+export function useRecentHiresByRun(runId: number | null) {
+    const reportDetailsApi = useReportDetailsApi();
     return useQuery({
         queryKey: ['recentHires', runId],
         queryFn: () => {
             if (!runId) return [];
-            return apiClient.getRecentHiresByRun(runId);
+            return reportDetailsApi.getRecentHiresByRun(runId);
         },
         enabled: !!runId,
     });

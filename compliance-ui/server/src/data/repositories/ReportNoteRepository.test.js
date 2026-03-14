@@ -2,6 +2,7 @@
  * ReportNoteRepository.test.js - Unit tests for ReportNoteRepository
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ReportNoteRepository } from './ReportNoteRepository.js';
 
 describe('ReportNoteRepository', () => {
@@ -11,24 +12,24 @@ describe('ReportNoteRepository', () => {
 
     beforeEach(() => {
         mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         mockPool = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         repository = new ReportNoteRepository(mockPool);
 
         // Spy on the methods so we can mock their return values
-        jest.spyOn(repository, 'query');
-        jest.spyOn(repository, 'queryOne');
-        jest.spyOn(repository, 'execute');
+        vi.spyOn(repository, 'query');
+        vi.spyOn(repository, 'queryOne');
+        vi.spyOn(repository, 'execute');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('getNotesByReport', () => {

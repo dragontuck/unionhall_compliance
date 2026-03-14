@@ -1,13 +1,14 @@
 /**
- * useReports - Hook for managing compliance reports
+ * useReports - Hooks for managing compliance reports
  * Single Responsibility Principle: Only handles report-related queries
+ * Interface Segregation Principle: Depends only on needed API interfaces
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { IApiClient } from '../services/interfaces/IApiClient';
+import type { IReportsAPI, IReportDetailsAPI } from '../services/interfaces';
 
 export function useReportsByRun(
-    apiClient: IApiClient,
+    apiClient: IReportsAPI,
     runId: number | null
 ) {
     return useQuery({
@@ -21,7 +22,7 @@ export function useReportsByRun(
 }
 
 export function useReportDetailsByRun(
-    apiClient: IApiClient,
+    apiClient: IReportDetailsAPI,
     runId: number | null
 ) {
     return useQuery({
@@ -35,7 +36,7 @@ export function useReportDetailsByRun(
 }
 
 export function useLastHiresByRun(
-    apiClient: IApiClient,
+    apiClient: IReportDetailsAPI,
     runId: number | null
 ) {
     return useQuery({

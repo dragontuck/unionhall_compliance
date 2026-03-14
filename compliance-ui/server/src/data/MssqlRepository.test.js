@@ -2,6 +2,7 @@
  * MssqlRepository.test.js - Unit tests for MssqlRepository
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MssqlRepository } from './MssqlRepository.js';
 import sql from 'mssql';
 
@@ -12,12 +13,12 @@ describe('MssqlRepository', () => {
 
     beforeEach(() => {
         mockRequest = {
-            input: jest.fn().mockReturnThis(),
-            query: jest.fn(),
+            input: vi.fn().mockReturnThis(),
+            query: vi.fn(),
         };
 
         mockPool = {
-            request: jest.fn().mockReturnValue(mockRequest),
+            request: vi.fn().mockReturnValue(mockRequest),
         };
 
         repository = new MssqlRepository(mockPool);
@@ -268,14 +269,14 @@ describe('MssqlRepository', () => {
 
     describe('_bindParameters', () => {
         it('should bind string parameter', () => {
-            const request = { input: jest.fn() };
+            const request = { input: vi.fn() };
             repository._bindParameters(request, { name: 'John' });
 
             expect(request.input).toHaveBeenCalledWith('name', sql.NVarChar(sql.MAX), 'John');
         });
 
         it('should bind parameter with explicit type', () => {
-            const request = { input: jest.fn() };
+            const request = { input: vi.fn() };
             repository._bindParameters(request, {
                 count: { type: sql.Int, value: 42 }
             });
@@ -284,7 +285,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should bind multiple parameters', () => {
-            const request = { input: jest.fn() };
+            const request = { input: vi.fn() };
             repository._bindParameters(request, {
                 id: 1,
                 name: 'Test',
@@ -295,7 +296,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should bind null parameter', () => {
-            const request = { input: jest.fn() };
+            const request = { input: vi.fn() };
             repository._bindParameters(request, { value: null });
 
             expect(request.input).toHaveBeenCalledWith('value', sql.NVarChar(sql.MAX), null);
@@ -304,7 +305,7 @@ describe('MssqlRepository', () => {
 
     describe('_executeWithRetry', () => {
         it('should execute operation successfully on first attempt', async () => {
-            const operation = jest.fn().mockResolvedValue('success');
+            const operation = vi.fn().mockResolvedValue('success');
 
             const result = await repository._executeWithRetry(operation);
 
@@ -313,7 +314,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should retry on connection is closed error', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValueOnce(new Error('Connection is closed'))
                 .mockResolvedValueOnce('success');
 
@@ -324,7 +325,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should retry on connection timeout error', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValueOnce(new Error('Connection timeout'))
                 .mockResolvedValueOnce('success');
 
@@ -335,7 +336,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should retry on request timeout error', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValueOnce(new Error('Request timeout'))
                 .mockResolvedValueOnce('success');
 
@@ -346,7 +347,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should retry on ESOCKET error', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValueOnce(new Error('ESOCKET'))
                 .mockResolvedValueOnce('success');
 
@@ -357,7 +358,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should not retry on non-connection errors', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValue(new Error('Syntax error'));
 
             await expect(repository._executeWithRetry(operation))
@@ -368,7 +369,7 @@ describe('MssqlRepository', () => {
         });
 
         it('should fail after max retries exceeded', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValue(new Error('Connection is closed'));
 
             await expect(repository._executeWithRetry(operation))
@@ -379,12 +380,12 @@ describe('MssqlRepository', () => {
         });
 
         it('should implement exponential backoff', async () => {
-            const operation = jest.fn()
+            const operation = vi.fn()
                 .mockRejectedValueOnce(new Error('Connection is closed'))
                 .mockRejectedValueOnce(new Error('Connection is closed'))
                 .mockResolvedValueOnce('success');
 
-            const delayMock = jest.spyOn(repository, '_delay');
+            const delayMock = vi.spyOn(repository, '_delay');
 
             await repository._executeWithRetry(operation);
 

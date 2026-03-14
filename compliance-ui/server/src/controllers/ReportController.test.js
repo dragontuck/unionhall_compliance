@@ -2,6 +2,7 @@
  * ReportController.test.js - Unit tests for ReportController
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ReportController } from './ReportController.js';
 
 describe('ReportController', () => {
@@ -11,12 +12,12 @@ describe('ReportController', () => {
 
     beforeEach(() => {
         mockReportService = {
-            getReports: jest.fn(),
-            getReportsByRun: jest.fn(),
-            getReportDetails: jest.fn(),
-            getDetailsByRun: jest.fn(),
-            updateReport: jest.fn(),
-            addNote: jest.fn(),
+            getReports: vi.fn(),
+            getReportsByRun: vi.fn(),
+            getReportDetails: vi.fn(),
+            getDetailsByRun: vi.fn(),
+            updateReport: vi.fn(),
+            addNote: vi.fn(),
         };
 
         controller = new ReportController(mockReportService);
@@ -28,8 +29,8 @@ describe('ReportController', () => {
         };
 
         res = {
-            json: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            status: vi.fn().mockReturnThis(),
         };
     });
 

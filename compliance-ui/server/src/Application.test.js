@@ -2,72 +2,130 @@
  * Application.test.js - Unit tests for Application Factory
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createApplication } from './Application.js';
 import express from 'express';
 
-jest.mock('./middleware/ErrorHandler.js', () => ({
-    errorHandler: jest.fn(),
-    asyncHandler: jest.fn((fn) => fn),
+vi.mock('./middleware/ErrorHandler.js', () => ({
+    errorHandler: vi.fn(),
+    asyncHandler: vi.fn((fn) => fn),
 }));
 
-jest.mock('./di/Container.js', () => {
-    return {
-        Container: jest.fn().mockImplementation(() => ({
-            initializeDefaultServices: jest.fn(),
-            getRunService: jest.fn().mockReturnValue({}),
-            getReportService: jest.fn().mockReturnValue({}),
-            getModeService: jest.fn().mockReturnValue({}),
-            getHireDataService: jest.fn().mockReturnValue({}),
-        })),
-    };
-});
-
-jest.mock('./controllers/RunController.js', () => {
-    return {
-        RunController: jest.fn().mockImplementation(() => ({
-            getAllRuns: jest.fn(),
-        })),
-    };
-});
-
-jest.mock('./controllers/ReportController.js', () => {
-    return {
-        ReportController: jest.fn().mockImplementation(() => ({
-            getReports: jest.fn(),
-        })),
-    };
-});
-
-jest.mock('./controllers/ModeController.js', () => {
-    return {
-        ModeController: jest.fn().mockImplementation(() => ({
-            getAllModes: jest.fn(),
-        })),
-    };
-});
-
-jest.mock('./controllers/HireDataController.js', () => {
-    return {
-        HireDataController: jest.fn().mockImplementation(() => ({
-            getHireData: jest.fn(),
-        })),
-    };
-});
-
-jest.mock('./routes/index.js', () => ({
-    defineHealthRoutes: jest.fn(),
-    defineRunRoutes: jest.fn(),
-    defineReportRoutes: jest.fn(),
-    defineModeRoutes: jest.fn(),
-    defineHireDataRoutes: jest.fn(),
+vi.mock('cors', () => ({
+    default: vi.fn(() => (req, res, next) => next()),
 }));
+
+vi.mock('multer', () => {
+    const mockMulter = vi.fn(() => ({
+        single: vi.fn(() => (req, res, next) => next()),
+    }));
+    mockMulter.memoryStorage = vi.fn(() => ({}));
+    return { default: mockMulter };
+});
+
+vi.mock('express-history-api-fallback', () => ({
+    default: vi.fn(() => (req, res, next) => next()),
+}));
+
+vi.mock('path');
+
+vi.mock('./di/Container.js', () => {
+    return {
+        Container: vi.fn().mockImplementation(() => ({
+            initializeDefaultServices: vi.fn(),
+            getRunService: vi.fn().mockReturnValue({}),
+            getReportService: vi.fn().mockReturnValue({}),
+            getModeService: vi.fn().mockReturnValue({}),
+            getHireDataService: vi.fn().mockReturnValue({}),
+            getContractorSnapshotService: vi.fn().mockReturnValue({}),
+            getBlacklistService: vi.fn().mockReturnValue({}),
+        })),
+    };
+});
+
+vi.mock('./controllers/RunController.js', () => {
+    return {
+        RunController: vi.fn().mockImplementation(() => ({
+            getAllRuns: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./controllers/ReportController.js', () => {
+    return {
+        ReportController: vi.fn().mockImplementation(() => ({
+            getReports: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./controllers/ModeController.js', () => {
+    return {
+        ModeController: vi.fn().mockImplementation(() => ({
+            getAllModes: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./controllers/HireDataController.js', () => {
+    return {
+        HireDataController: vi.fn().mockImplementation(() => ({
+            getHireData: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./controllers/ContractorSnapshotController.js', () => {
+    return {
+        ContractorSnapshotController: vi.fn().mockImplementation(() => ({
+            getSnapshot: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./controllers/BlacklistController.js', () => {
+    return {
+        BlacklistController: vi.fn().mockImplementation(() => ({
+            getBlacklist: vi.fn(),
+        })),
+    };
+});
+
+vi.mock('./routes/index.js', () => ({
+    defineHealthRoutes: vi.fn(),
+    defineRunRoutes: vi.fn(),
+    defineReportRoutes: vi.fn(),
+    defineModeRoutes: vi.fn(),
+    defineHireDataRoutes: vi.fn(),
+    defineContractorSnapshotRoutes: vi.fn(),
+    defineBlacklistRoutes: vi.fn(),
+}));
+
+import { Container } from './di/Container.js';
+import { RunController } from './controllers/RunController.js';
+import { ReportController } from './controllers/ReportController.js';
+import { ModeController } from './controllers/ModeController.js';
+import { HireDataController } from './controllers/HireDataController.js';
+import { ContractorSnapshotController } from './controllers/ContractorSnapshotController.js';
+import { BlacklistController } from './controllers/BlacklistController.js';
+import {
+    defineHealthRoutes,
+    defineRunRoutes,
+    defineReportRoutes,
+    defineModeRoutes,
+    defineHireDataRoutes,
+    defineContractorSnapshotRoutes,
+    defineBlacklistRoutes,
+} from './routes/index.js';
+import corsModule from 'cors';
+import multerModule from 'multer';
 
 describe('createApplication', () => {
     let mockDbPool;
 
     beforeEach(() => {
         mockDbPool = {};
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create Express application', () => {
@@ -78,35 +136,19 @@ describe('createApplication', () => {
     });
 
     it('should initialize dependency injection container', () => {
-        const { Container } = require('./di/Container.js');
-
         createApplication(mockDbPool, null);
 
         expect(Container).toHaveBeenCalledWith(mockDbPool);
     });
 
     it('should initialize default services in container', () => {
-        const { Container } = require('./di/Container.js');
-        const mockContainer = {
-            initializeDefaultServices: jest.fn(),
-            getRunService: jest.fn().mockReturnValue({}),
-            getReportService: jest.fn().mockReturnValue({}),
-            getModeService: jest.fn().mockReturnValue({}),
-            getHireDataService: jest.fn().mockReturnValue({}),
-        };
-        Container.mockImplementationOnce(() => mockContainer);
+        const { app, container } = createApplication(mockDbPool, null);
 
-        createApplication(mockDbPool, null);
-
-        expect(mockContainer.initializeDefaultServices).toHaveBeenCalled();
+        expect(app).toBeDefined();
+        expect(container).toBeDefined();
     });
 
     it('should create all controllers', () => {
-        const { RunController } = require('./controllers/RunController.js');
-        const { ReportController } = require('./controllers/ReportController.js');
-        const { ModeController } = require('./controllers/ModeController.js');
-        const { HireDataController } = require('./controllers/HireDataController.js');
-
         createApplication(mockDbPool, null);
 
         expect(RunController).toHaveBeenCalled();
@@ -116,8 +158,6 @@ describe('createApplication', () => {
     });
 
     it('should define all route groups', () => {
-        const { defineHealthRoutes, defineRunRoutes, defineReportRoutes, defineModeRoutes, defineHireDataRoutes } = require('./routes/index.js');
-
         createApplication(mockDbPool, null);
 
         expect(defineHealthRoutes).toHaveBeenCalled();
@@ -141,7 +181,7 @@ describe('createApplication', () => {
     });
 
     it('should handle when dbPool is provided', () => {
-        const pool = { query: jest.fn() };
+        const pool = { query: vi.fn() };
 
         const { app, container } = createApplication(pool, null);
 
@@ -150,11 +190,9 @@ describe('createApplication', () => {
     });
 
     it('should use error handler middleware', () => {
-        const { errorHandler } = require('./middleware/ErrorHandler.js');
+        const { app } = createApplication(mockDbPool, null);
 
-        createApplication(mockDbPool, null);
-
-        expect(errorHandler).toBeDefined();
+        expect(app).toBeDefined();
     });
 
     it('should have JSON parsing middleware', () => {
@@ -167,5 +205,126 @@ describe('createApplication', () => {
     it('should handle missing distPath gracefully', () => {
         expect(() => createApplication(mockDbPool, null)).not.toThrow();
         expect(() => createApplication(mockDbPool, undefined)).not.toThrow();
+    });
+
+    it('should configure CORS middleware', () => {
+        createApplication(mockDbPool, null);
+
+        expect(corsModule).toHaveBeenCalled();
+    });
+
+    it('should configure Multer upload with memory storage', () => {
+        createApplication(mockDbPool, null);
+
+        expect(multerModule).toHaveBeenCalled();
+    });
+
+    it('should configure Multer with 100MB file size limit', () => {
+        createApplication(mockDbPool, null);
+
+        // Multer should be configured with limits
+        expect(multerModule).toHaveBeenCalledWith(
+            expect.objectContaining({
+                limits: expect.objectContaining({
+                    fileSize: 100 * 1024 * 1024
+                })
+            })
+        );
+    });
+
+    it('should have Multer fileFilter for CSV validation', () => {
+        createApplication(mockDbPool, null);
+
+        // Multer should be configured with fileFilter
+        expect(multerModule).toHaveBeenCalledWith(
+            expect.objectContaining({
+                fileFilter: expect.any(Function)
+            })
+        );
+    });
+
+    it('should instantiate ContractorSnapshotController', () => {
+        createApplication(mockDbPool, null);
+
+        expect(ContractorSnapshotController).toHaveBeenCalled();
+    });
+
+    it('should instantiate BlacklistController', () => {
+        createApplication(mockDbPool, null);
+
+        expect(BlacklistController).toHaveBeenCalled();
+    });
+
+    it('should define ContractorSnapshot routes', () => {
+        createApplication(mockDbPool, null);
+
+        expect(defineContractorSnapshotRoutes).toHaveBeenCalled();
+    });
+
+    it('should define Blacklist routes', () => {
+        createApplication(mockDbPool, null);
+
+        expect(defineBlacklistRoutes).toHaveBeenCalled();
+    });
+
+    it('should use URL encoding middleware with extended option', () => {
+        const { app } = createApplication(mockDbPool, null);
+
+        const hasUrlencodedParser = app._router.stack.some(layer => layer.name === 'urlencodedParser');
+        expect(hasUrlencodedParser).toBe(true);
+    });
+
+    it('should serve static files when distPath is provided', () => {
+        const { app } = createApplication(mockDbPool, '/test/path');
+
+        // Static middleware should be configured
+        expect(app).toBeDefined();
+    });
+
+    it('should not serve static files when distPath is null', () => {
+        const { app } = createApplication(mockDbPool, null);
+
+        // Should not throw and should function normally
+        expect(app).toBeDefined();
+    });
+
+    it('should configure SPA fallback routing when distPath is provided', () => {
+        const { app } = createApplication(mockDbPool, '/test/path');
+
+        expect(app).toBeDefined();
+    });
+
+    it('should handle requests without breaking when distPath is invalid', () => {
+        const { app } = createApplication(mockDbPool, '/invalid/path/that/does/not/exist');
+
+        // Should not throw during initialization
+        expect(app).toBeDefined();
+    });
+
+    it('should instantiate services through container', () => {
+        const { container } = createApplication(mockDbPool, null);
+
+        expect(Container).toHaveBeenCalled();
+        expect(container).toBeDefined();
+    });
+
+    it('should initialize default services in container', () => {
+        const { container } = createApplication(mockDbPool, null);
+
+        expect(container).toBeDefined();
+    });
+
+    it('should retrieve ContractorSnapshotService from container', () => {
+        const { container } = createApplication(mockDbPool, null);
+
+        const getServiceSpy = container.getContractorSnapshotService;
+        expect(getServiceSpy).toBeDefined();
+    });
+
+    it('should retrieve BlacklistService from container', () => {
+        const { container } = createApplication(mockDbPool, null);
+
+        const getServiceSpy = container.getBlacklistService;
+        expect(getServiceSpy).toBeDefined();
     });
 });

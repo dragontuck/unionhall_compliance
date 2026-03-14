@@ -2,6 +2,7 @@
  * HireDataController.test.js - Unit tests for HireDataController
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HireDataController } from './HireDataController.js';
 
 describe('HireDataController', () => {
@@ -11,9 +12,9 @@ describe('HireDataController', () => {
 
     beforeEach(() => {
         mockHireDataService = {
-            getHireData: jest.fn(),
-            getRecentHires: jest.fn(),
-            importHires: jest.fn(),
+            getHireData: vi.fn(),
+            getRecentHires: vi.fn(),
+            importHires: vi.fn(),
         };
 
         controller = new HireDataController(mockHireDataService);
@@ -26,8 +27,8 @@ describe('HireDataController', () => {
         };
 
         res = {
-            json: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            status: vi.fn().mockReturnThis(),
         };
     });
 
@@ -41,7 +42,7 @@ describe('HireDataController', () => {
             await controller.getHireData(req, res);
 
             expect(res.json).toHaveBeenCalledWith(hireData);
-            expect(mockHireDataService.getHireData).toHaveBeenCalledWith({}, 2000);
+            expect(mockHireDataService.getHireData).toHaveBeenCalledWith({}, 10000);
         });
 
         it('should apply reviewedDate filter', async () => {
@@ -51,7 +52,7 @@ describe('HireDataController', () => {
 
             await controller.getHireData(req, res);
 
-            expect(mockHireDataService.getHireData).toHaveBeenCalledWith({ reviewedDate: '2025-01-15' }, 2000);
+            expect(mockHireDataService.getHireData).toHaveBeenCalledWith({ reviewedDate: '2025-01-15' }, 10000);
         });
 
         it('should apply custom limit', async () => {

@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FileUpload } from './FileUpload';
-import * as apiProvider from '../providers';
+import { createTestWrapper, createMockApiClient } from '../setupTestUtils';
 import * as hooks from '../hooks';
 
 // Mock the hooks and utilities
@@ -12,14 +11,7 @@ vi.mock('../hooks', async () => {
     return {
         ...actual,
         useImportHireData: vi.fn(),
-    };
-});
-
-vi.mock('../providers', async () => {
-    const actual = await vi.importActual('../providers');
-    return {
-        ...actual,
-        useApiClient: vi.fn(),
+        useImportContractorSnapshots: vi.fn(),
     };
 });
 
@@ -48,17 +40,6 @@ vi.mock('./presentational', () => ({
     ),
 }));
 
-const createWrapper = () => {
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
-    return ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
-    );
-};
-
 describe('FileUpload Component', () => {
     let mockApiClient: any;
     let mockMutation: any;
@@ -66,9 +47,7 @@ describe('FileUpload Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        mockApiClient = {
-            importHireData: vi.fn(),
-        };
+        mockApiClient = createMockApiClient();
 
         mockMutation = {
             mutate: vi.fn((_, { }) => { }),
@@ -79,15 +58,15 @@ describe('FileUpload Component', () => {
             data: null,
         };
 
-        vi.mocked(apiProvider.useApiClient).mockReturnValue(mockApiClient);
         vi.mocked(hooks.useImportHireData).mockReturnValue(mockMutation);
+        vi.mocked(hooks.useImportContractorSnapshots).mockReturnValue(mockMutation);
     });
 
     describe('Rendering', () => {
         it('should render file upload container with heading', () => {
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(screen.getByText('Hire Data Import')).toBeInTheDocument();
@@ -96,7 +75,7 @@ describe('FileUpload Component', () => {
         it('should render file input', () => {
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(screen.getByTestId('file-input')).toBeInTheDocument();
@@ -108,7 +87,7 @@ describe('FileUpload Component', () => {
             const user = userEvent.setup();
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const file = new File(['test'], 'data.csv', { type: 'text/csv' });
@@ -127,7 +106,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload onError={onError} />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const file = new File(['test'], 'data.txt', { type: 'text/plain' });
@@ -148,7 +127,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const input = screen.getByTestId('file-input') as HTMLInputElement;
@@ -182,7 +161,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload onSuccess={onSuccess} />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const input = screen.getByTestId('file-input') as HTMLInputElement;
@@ -209,7 +188,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload onError={onError} />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const input = screen.getByTestId('file-input') as HTMLInputElement;
@@ -230,7 +209,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             // The file info component should not show during loading
@@ -243,11 +222,11 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(screen.getByText(/Success!/)).toBeInTheDocument();
-            expect(screen.getByText(/100 rows imported/)).toBeInTheDocument();
+            expect(screen.getByText(/100 rows processed/)).toBeInTheDocument();
         });
 
         it('should show error message on import failure', () => {
@@ -256,7 +235,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(screen.getByText(/Error:/)).toBeInTheDocument();
@@ -276,7 +255,7 @@ describe('FileUpload Component', () => {
 
             render(
                 <FileUpload />,
-                { wrapper: createWrapper() }
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             const input = screen.getByTestId('file-input') as HTMLInputElement;

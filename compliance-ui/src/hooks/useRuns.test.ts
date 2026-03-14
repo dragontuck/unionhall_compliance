@@ -1,38 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import { useRuns, useRunById } from './useRuns';
+import { createTestWrapper, createMockApiClient } from '../setupTestUtils';
 import type { IApiClient } from '../services/interfaces/IApiClient';
 
 describe('useRuns hooks', () => {
-    let mockApiService: Partial<IApiClient>;
+    let mockApiClient: Partial<IApiClient>;
 
     beforeEach(() => {
-        mockApiService = {
-            getRuns: vi.fn(),
-            getRunById: vi.fn(),
-        };
+        mockApiClient = createMockApiClient();
     });
-
-    const createWrapper = () => {
-        const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-        });
-        const Wrapper = ({ children }: { children: ReactNode }) => {
-            const createElement = require('react').createElement;
-            return createElement(QueryClientProvider, { client: queryClient }, children);
-        };
-        return Wrapper;
-    };
 
     describe('useRuns', () => {
         it('should initialize with loading state', () => {
-            (mockApiService.getRuns as any).mockResolvedValue([]);
+            (mockApiClient.getRuns as any).mockResolvedValue([]);
 
             const { result } = renderHook(
-                () => useRuns(mockApiService as IApiClient),
-                { wrapper: createWrapper() }
+                () => useRuns(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(result.current.isLoading).toBe(true);
@@ -43,11 +28,11 @@ describe('useRuns hooks', () => {
                 { id: 1, name: 'Run 1', status: 'completed' },
                 { id: 2, name: 'Run 2', status: 'running' },
             ];
-            (mockApiService.getRuns as any).mockResolvedValue(mockRuns);
+            (mockApiClient.getRuns as any).mockResolvedValue(mockRuns);
 
             const { result } = renderHook(
-                () => useRuns(mockApiService as IApiClient),
-                { wrapper: createWrapper() }
+                () => useRuns(),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {
@@ -59,21 +44,21 @@ describe('useRuns hooks', () => {
     describe('useRunById', () => {
         it('should not fetch when runId is null', () => {
             const { result } = renderHook(
-                () => useRunById(mockApiService as IApiClient, null),
-                { wrapper: createWrapper() }
+                () => useRunById(null),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             expect(result.current.data).toBeUndefined();
-            expect(mockApiService.getRunById).not.toHaveBeenCalled();
+            expect(mockApiClient.getRunById).not.toHaveBeenCalled();
         });
 
         it('should fetch run by id when runId is provided', async () => {
             const mockRun = { id: 1, name: 'Run 1', status: 'completed' };
-            (mockApiService.getRunById as any).mockResolvedValue(mockRun);
+            (mockApiClient.getRunById as any).mockResolvedValue(mockRun);
 
             const { result } = renderHook(
-                () => useRunById(mockApiService as IApiClient, 1),
-                { wrapper: createWrapper() }
+                () => useRunById(1),
+                { wrapper: createTestWrapper(mockApiClient) }
             );
 
             await waitFor(() => {

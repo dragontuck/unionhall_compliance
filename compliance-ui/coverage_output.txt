@@ -1,0 +1,271 @@
+
+> compliance-ui@0.0.0 test:coverage
+> rm -rf coverage && vitest --coverage --run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mD:/Workspace/Github/unionhall_compliance/compliance-ui[39m
+[2m      Coverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/hooks/useMutations.test.ts [2m ([22m[2m8 tests[22m[2m)[22m[33m 856[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard.test.tsx [2m ([22m[2m11 tests[22m[2m)[22m[33m 921[2mms[22m[39m
+[90mstderr[2m | src/components/DataTable.test.tsx[2m > [22m[2mDataTable Component[2m > [22m[2mshould handle download button click[22m[39m
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:588:17)
+    at processTimers (node:internal/timers:523:7) [90mundefined[39m
+
+ [32m✓[39m src/components/DataTable.test.tsx [2m ([22m[2m26 tests[22m[2m)[22m[33m 5262[2mms[22m[39m
+ [32m✓[39m src/components/RunExecutor.test.tsx [2m ([22m[2m15 tests[22m[2m)[22m[33m 5149[2mms[22m[39m
+ [32m✓[39m src/components/presentational/FormField.test.tsx [2m ([22m[2m20 tests[22m[2m)[22m[33m 2900[2mms[22m[39m
+ [32m✓[39m src/hooks/useHireData.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[33m 1834[2mms[22m[39m
+ [32m✓[39m src/components/FileUpload.test.tsx [2m ([22m[2m11 tests[22m[2m)[22m[33m 6874[2mms[22m[39m
+[90mstderr[2m | src/components/Alert.test.tsx[2m > [22m[2mAlert Component[2m > [22m[2mAlertDescription Component[2m > [22m[2mshould render with complex children[22m[39m
+In HTML, <p> cannot be a descendant of <p>.
+This will cause a hydration error.
+
+  <AlertDescription>
+>   <p className="alert-description">
+      <div>
+>       <p>
+        ...
+
+<p> cannot contain a nested <p>.
+See this log for the ancestor stack trace.
+In HTML, <div> cannot be a descendant of <p>.
+This will cause a hydration error.
+
+  <AlertDescription>
+>   <p className="alert-description">
+>     <div>
+
+<p> cannot contain a nested <div>.
+See this log for the ancestor stack trace.
+
+ [32m✓[39m src/components/Alert.test.tsx [2m ([22m[2m15 tests[22m[2m)[22m[33m 1686[2mms[22m[39m
+ [32m✓[39m src/hooks/useDragAndDrop.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[33m 348[2mms[22m[39m
+[90mstderr[2m | src/hooks/useAlert.test.ts[2m > [22m[2museAlert[2m > [22m[2mshowAlert[2m > [22m[2mshould display success alert[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/hooks/useAlert.test.ts[2m > [22m[2museAlert[2m > [22m[2mshowAlert[2m > [22m[2mshould display error alert[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/hooks/useAlert.test.ts[2m > [22m[2museAlert[2m > [22m[2mshowAlert[2m > [22m[2mshould replace existing alert with new one[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/hooks/useAlert.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[33m 332[2mms[22m[39m
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp Component[2m > [22m[2mshould render without crashing[22m[39m
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["modes"]
+
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp Component[2m > [22m[2mshould render navigation component[22m[39m
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["modes"]
+
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp Component[2m > [22m[2mshould render main content area[22m[39m
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["modes"]
+
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp Component[2m > [22m[2mshould render footer[22m[39m
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["modes"]
+
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mApp Component[2m > [22m[2mshould have correct structure[22m[39m
+Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["modes"]
+
+ [32m✓[39m src/App.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 1254[2mms[22m[39m
+ [32m✓[39m src/hooks/useLocalStorage.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[33m 330[2mms[22m[39m
+ [32m✓[39m src/utils/dateUtils.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[33m 639[2mms[22m[39m
+[90mstderr[2m | src/hooks/useAsync.test.ts[2m > [22m[2museAsync[2m > [22m[2minitialization[2m > [22m[2mshould initialize with default state when immediate is true[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/utils/fileUtils.test.ts[2m > [22m[2mfileUtils[2m > [22m[2mreadFileAsText[2m > [22m[2mshould read file as text successfully[22m[39m
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:588:17)
+    at processTimers (node:internal/timers:523:7) [90mundefined[39m
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:588:17)
+    at processTimers (node:internal/timers:523:7) [90mundefined[39m
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\browser\not-implemented.js:9:17)
+    at navigateFetch (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:77:3)
+    at exports.navigate (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\window\navigation.js:55:3)
+    at Timeout._onTimeout (D:\Workspace\Github\unionhall_compliance\compliance-ui\node_modules\jsdom\lib\jsdom\living\nodes\HTMLHyperlinkElementUtils-impl.js:81:7)
+    at listOnTimeout (node:internal/timers:588:17)
+    at processTimers (node:internal/timers:523:7) [90mundefined[39m
+
+ [32m✓[39m src/utils/fileUtils.test.ts [2m ([22m[2m16 tests[22m[2m)[22m[33m 2290[2mms[22m[39m
+[90mstderr[2m | src/hooks/useAsync.test.ts[2m > [22m[2museAsync[2m > [22m[2mexecute function[2m > [22m[2mshould reset state when execute is called[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/hooks/useAsync.test.ts[2m > [22m[2museAsync[2m > [22m[2mexecute function[2m > [22m[2mshould handle multiple sequential executions[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | src/hooks/useAsync.test.ts[2m > [22m[2museAsync[2m > [22m[2mexecute function[2m > [22m[2mshould handle multiple sequential executions[22m[39m
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m src/hooks/useAsync.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[33m 1502[2mms[22m[39m
+ [32m✓[39m src/hooks/useModes.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[33m 687[2mms[22m[39m
+ [32m✓[39m src/hooks/usePrevious.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[33m 508[2mms[22m[39m
+ [32m✓[39m src/pages/Reports.test.tsx [2m ([22m[2m9 tests[22m[2m)[22m[33m 919[2mms[22m[39m
+ [32m✓[39m src/components/presentational/FileInfo.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 1211[2mms[22m[39m
+ [32m✓[39m src/hooks/useReports.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[33m 472[2mms[22m[39m
+ [32m✓[39m src/utils/errorUtils.test.ts [2m ([22m[2m14 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/components/layout/Footer.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 538[2mms[22m[39m
+ [32m✓[39m src/hooks/useRuns.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[33m 366[2mms[22m[39m
+ [32m✓[39m src/components/layout/Navigation.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[33m 619[2mms[22m[39m
+ [32m✓[39m src/components/presentational/FileUploadDropZone.test.tsx [2m ([22m[2m4 tests[22m[2m)[22m[90m 265[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m25 passed[39m[22m[90m (25)[39m
+[2m      Tests [22m [1m[32m250 passed[39m[22m[90m (250)[39m
+[2m   Start at [22m 17:02:17
+[2m   Duration [22m 269.00s[2m (transform 25.28s, setup 362.68s, collect 113.18s, tests 37.79s, environment 1002.91s, prepare 150.45s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   54.12 |       88 |   73.95 |   54.12 |                   
+ src               |   87.15 |       80 |      60 |   87.15 |                   
+  App.tsx          |     100 |      100 |     100 |     100 |                   
+  ...pTestUtils.ts |    81.6 |       75 |      50 |    81.6 | 97-103,110-125    
+ src/components    |   37.16 |    91.01 |   94.11 |   37.16 |                   
+  Alert.tsx        |     100 |      100 |     100 |     100 |                   
+  DataTable.tsx    |   98.05 |    90.74 |     100 |   98.05 | 54-55,98-99       
+  FileUpload.tsx   |      90 |    88.88 |     100 |      90 | 35-37,53-60,76-77 
+  ReportViewer.tsx |     1.5 |      100 |       0 |     1.5 | 12-732            
+  RunExecutor.tsx  |   92.85 |    91.66 |     100 |   92.85 | 27-32             
+ ...ponents/layout |   90.52 |    83.33 |      50 |   90.52 |                   
+  Footer.tsx       |     100 |      100 |     100 |     100 |                   
+  Navigation.tsx   |   87.14 |       80 |   33.33 |   87.14 | 56-64             
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ ...presentational |   96.94 |    85.71 |   57.14 |   96.94 |                   
+  FileInfo.tsx     |     100 |      100 |     100 |     100 |                   
+  ...dDropZone.tsx |     100 |      100 |     100 |     100 |                   
+  FormField.tsx    |     100 |      100 |     100 |     100 |                   
+  ...cutorForm.tsx |   93.45 |       50 |      25 |   93.45 | 69-71,94-97       
+  index.ts         |     100 |      100 |     100 |     100 |                   
+ src/hooks         |   73.47 |    94.54 |   78.78 |   73.47 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  useAddDialog.ts  |   40.81 |      100 |       0 |   40.81 | 21-49             
+  useAlert.ts      |     100 |      100 |     100 |     100 |                   
+  useAsync.ts      |     100 |      100 |     100 |     100 |                   
+  useBlacklist.ts  |   17.18 |      100 |       0 |   17.18 | 12-64             
+  ...leteDialog.ts |    42.5 |      100 |       0 |    42.5 | 18-40             
+  ...ragAndDrop.ts |     100 |      100 |     100 |     100 |                   
+  useEditDialog.ts |   37.25 |      100 |       0 |   37.25 | 20-51             
+  useHireData.ts   |     100 |       80 |     100 |     100 | 23                
+  ...calStorage.ts |     100 |      100 |     100 |     100 |                   
+  useModes.ts      |     100 |      100 |     100 |     100 |                   
+  useMutations.ts  |     100 |      100 |      90 |     100 |                   
+  usePrevious.ts   |     100 |      100 |     100 |     100 |                   
+  useReports.ts    |      52 |    66.66 |      50 |      52 | 25-36,39-50       
+  useRuns.ts       |     100 |       80 |     100 |     100 | 25                
+ src/pages         |   30.33 |     87.5 |      50 |   30.33 |                   
+  ...Blacklist.tsx |    5.79 |      100 |       0 |    5.79 | 19-336,339-345    
+  Dashboard.tsx    |   92.92 |    85.71 |     100 |   92.92 | ...46-47,56,75-77 
+  Reports.tsx      |     100 |      100 |     100 |     100 |                   
+ src/providers     |      79 |       50 |   58.33 |      79 |                   
+  ApiProvider.tsx  |     100 |       50 |     100 |     100 | 24                
+  index.ts         |     100 |      100 |     100 |     100 |                   
+  useApiClient.ts  |      60 |      100 |       0 |      60 | 10-15             
+  ...ializedApi.ts |   74.28 |       50 |      60 |   74.28 | ...25-126,135-140 
+ src/services      |       0 |        0 |       0 |       0 |                   
+  api.ts           |       0 |        0 |       0 |       0 | 1-16              
+ ...mplementations |    9.86 |      100 |       0 |    9.86 |                   
+  ...sApiClient.ts |    9.86 |      100 |       0 |    9.86 | 23-223            
+ src/utils         |      96 |       90 |     100 |      96 |                   
+  dateUtils.ts     |    91.3 |    86.66 |     100 |    91.3 | 18-19,35-36       
+  errorUtils.ts    |      96 |    88.23 |     100 |      96 | 24-25             
+  fileUtils.ts     |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------

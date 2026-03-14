@@ -1,28 +1,30 @@
 /**
  * useBlacklist - Custom hook for blacklist data management
  * Uses React Query for caching and synchronization
+ * Dependency Inversion: Uses specialized IBlacklistAPI via context
  */
 
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { apiService } from '../services/api';
+import { useBlacklistApi } from '../providers';
 import type { ContractorBlacklist } from '../types';
 
 export function useBlacklist(includeDeleted: boolean = false) {
     const queryClient = useQueryClient();
+    const blacklistApi = useBlacklistApi();
 
     // Fetch blacklist data
     const { data: blacklist = [], isLoading, error } = useQuery<ContractorBlacklist[]>({
         queryKey: ['blacklist', includeDeleted],
         queryFn: () =>
             includeDeleted
-                ? apiService.getBlacklistIncludingDeleted()
-                : apiService.getBlacklist(),
+                ? blacklistApi.getBlacklistIncludingDeleted()
+                : blacklistApi.getBlacklist(),
     });
 
     // Create mutation
     const createMutation = useMutation({
         mutationFn: (data: { employerId: string; contractorName: string }) =>
-            apiService.createBlacklist(data),
+            blacklistApi.createBlacklist(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blacklist'] });
         },
@@ -31,7 +33,7 @@ export function useBlacklist(includeDeleted: boolean = false) {
     // Update mutation
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: { contractorName: string } }) =>
-            apiService.updateBlacklist(id, data),
+            blacklistApi.updateBlacklist(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blacklist'] });
         },
@@ -39,7 +41,7 @@ export function useBlacklist(includeDeleted: boolean = false) {
 
     // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => apiService.deleteBlacklist(id),
+        mutationFn: (id: number) => blacklistApi.deleteBlacklist(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blacklist'] });
         },

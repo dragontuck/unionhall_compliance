@@ -1,14 +1,15 @@
 /**
  * useModes - Hook for managing compliance modes
- * Single Responsibility Principle: Only handles mode-related queries
+ * Dependency Inversion: Uses specialized IModeAPI via context
  */
 
 import { useQuery } from '@tanstack/react-query';
-import type { IApiClient } from '../services/interfaces/IApiClient';
+import { useModeApi } from '../providers';
 
-export function useModes(apiClient: IApiClient) {
+export function useModes() {
+    const modeApi = useModeApi();
     return useQuery({
         queryKey: ['modes'],
-        queryFn: () => apiClient.getModes(),
+        queryFn: () => modeApi.getModes(),
     });
 }

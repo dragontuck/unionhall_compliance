@@ -2,6 +2,7 @@
  * RunController.test.js - Unit tests for RunController
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RunController } from './RunController.js';
 
 describe('RunController', () => {
@@ -11,10 +12,10 @@ describe('RunController', () => {
 
     beforeEach(() => {
         mockRunService = {
-            getAllRuns: jest.fn(),
-            getRunById: jest.fn(),
-            createRun: jest.fn(),
-            getRunForExport: jest.fn(),
+            getAllRuns: vi.fn(),
+            getRunById: vi.fn(),
+            createRun: vi.fn(),
+            getRunForExport: vi.fn(),
         };
 
         controller = new RunController(mockRunService);
@@ -26,10 +27,10 @@ describe('RunController', () => {
         };
 
         res = {
-            json: jest.fn().mockReturnThis(),
-            status: jest.fn().mockReturnThis(),
-            setHeader: jest.fn().mockReturnThis(),
-            send: jest.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            status: vi.fn().mockReturnThis(),
+            setHeader: vi.fn().mockReturnThis(),
+            send: vi.fn().mockReturnThis(),
         };
     });
 
@@ -94,7 +95,7 @@ describe('RunController', () => {
     describe('createRun', () => {
         it('should create a run successfully', async () => {
             req.body = {
-                modeId: '1',
+                mode: '1',
                 reviewedDate: '2025-01-15',
                 runNumber: '20',
             };
@@ -120,7 +121,7 @@ describe('RunController', () => {
 
         it('should create run without runNumber', async () => {
             req.body = {
-                modeId: '1',
+                mode: '1',
                 reviewedDate: '2025-01-15',
             };
             mockRunService.createRun.mockResolvedValue({

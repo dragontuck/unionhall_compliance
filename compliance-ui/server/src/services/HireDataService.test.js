@@ -2,6 +2,7 @@
  * HireDataService.test.js - Unit tests for HireDataService
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HireDataService } from './HireDataService.js';
 
 describe('HireDataService', () => {
@@ -10,10 +11,10 @@ describe('HireDataService', () => {
 
     beforeEach(() => {
         mockHireDataRepo = {
-            getHireData: jest.fn(),
-            getRecentHires: jest.fn(),
-            getHiresForContractor: jest.fn(),
-            createReviewedHire: jest.fn(),
+            getHireData: vi.fn(),
+            getRecentHires: vi.fn(),
+            getHiresForContractor: vi.fn(),
+            createReviewedHire: vi.fn(),
         };
 
         service = new HireDataService(mockHireDataRepo);

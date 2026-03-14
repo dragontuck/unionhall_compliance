@@ -12,6 +12,8 @@ export interface ComplianceReport {
     contractorId: number;
     contractorName: string;
     complianceStatus: string;
+    lastWedReported: string;
+    snapshotWed: string
     directCount: number;
     dispatchNeeded: number;
     nextHireDispatch: string;

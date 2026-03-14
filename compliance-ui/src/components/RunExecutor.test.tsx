@@ -2,9 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RunExecutor } from './RunExecutor';
-import * as apiProvider from '../providers';
+import { createTestWrapper, createMockApiClient } from '../setupTestUtils';
 import * as hooks from '../hooks';
 
 // Mock the hooks
@@ -17,22 +16,6 @@ vi.mock('../hooks', async () => {
     };
 });
 
-vi.mock('../providers', async () => {
-    const actual = await vi.importActual('../providers');
-    return {
-        ...actual,
-        useApiClient: vi.fn(),
-    };
-});
-
-vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-        ...actual,
-        useNavigate: vi.fn(),
-    };
-});
-
 vi.mock('../utils', () => ({
     extractErrorMessage: vi.fn((error: any, fallback: string) =>
         error?.message || fallback
@@ -40,7 +23,7 @@ vi.mock('../utils', () => ({
 }));
 
 vi.mock('./presentational', () => ({
-    RunExecutorForm: ({ reviewedDate, onReviewedDateChange, mode, onModeChange, modes, dryRun, onDryRunChange, onExecute, isDisabled }: any) => (
+    RunExecutorForm: ({ reviewedDate, onReviewedDateChange, modeId, onModeChange, modes, dryRun, onDryRunChange, onExecute, isDisabled }: any) => (
         <div>
             <input
                 type="date"
@@ -49,13 +32,13 @@ vi.mock('./presentational', () => ({
                 data-testid="reviewed-date-input"
             />
             <select
-                value={mode}
+                value={modeId}
                 onChange={(e) => onModeChange(e.target.value)}
                 data-testid="mode-select"
             >
                 <option value="">Select Mode</option>
                 {modes.map((m: any) => (
-                    <option key={m.id} value={m.name}>{m.name}</option>
+                    <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
             </select>
             <label>
@@ -75,29 +58,20 @@ vi.mock('./presentational', () => ({
 }));
 
 const createWrapper = () => {
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
+    const mockApiClient = createMockApiClient();
     return ({ children }: { children: React.ReactNode }) => (
         <BrowserRouter>
-            <QueryClientProvider client={queryClient}>
-                {children}
-            </QueryClientProvider>
+            {createTestWrapper(mockApiClient)({ children })}
         </BrowserRouter>
     );
 };
 
 describe('RunExecutor Component', () => {
-    let mockApiClient: any;
     let mockMutation: any;
     let mockHook: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
-
-        mockApiClient = {
-            executeRun: vi.fn(),
-        };
 
         mockMutation = {
             mutate: vi.fn((_, { }) => { }),
@@ -116,7 +90,6 @@ describe('RunExecutor Component', () => {
             isLoading: false,
         };
 
-        vi.mocked(apiProvider.useApiClient).mockReturnValue(mockApiClient);
         vi.mocked(hooks.useExecuteRun).mockReturnValue(mockMutation);
         vi.mocked(hooks.useModes).mockReturnValue(mockHook);
     });
@@ -242,7 +215,7 @@ describe('RunExecutor Component', () => {
                 expect(mockMutation.mutate).toHaveBeenCalledWith(
                     expect.objectContaining({
                         reviewedDate: '2024-01-15',
-                        mode: 'Standard',
+                        mode: '1',
                         dryRun: false,
                     }),
                     expect.any(Object)
