@@ -1,0 +1,111 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    name: E2E Tests (${{ matrix.browser }})
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'compliance-ui/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: compliance-ui
+        run: npm install
+      
+      - name: Install Playwright browsers
+        working-directory: compliance-ui
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      
+      - name: Start dev server
+        working-directory: compliance-ui
+        run: npm run dev &
+        env:
+          CI: true
+      
+      - name: Wait for server to be ready
+        run: |
+          timeout 60 bash -c 'until curl -sf http://localhost:5173 > /dev/null; do sleep 1; done'
+      
+      - name: Run E2E tests - ${{ matrix.browser }}
+        working-directory: compliance-ui
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          BASE_URL: http://localhost:5173
+          CI: true
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: compliance-ui/playwright-report/
+          retention-days: 14
+      
+      - name: Upload test results JSON
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: compliance-ui/test-results/
+          retention-days: 7
+
+  test-summary:
+    name: Test Summary
+    if: always()
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check test status
+        run: |
+          if [ "${{ needs.e2e-tests.result }}" == "failure" ]; then
+            echo "❌ E2E tests failed"
+            exit 1
+          else
+            echo "✅ E2E tests passed"
+          fi
+
+  notify:
+    name: Notify on Failure
+    if: failure()
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ E2E tests failed. Check [workflow run](' + context.payload.pull_request.head.repo.html_url + '/actions/runs/' + context.runId + ') for details.'
+            })

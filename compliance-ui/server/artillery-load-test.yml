@@ -1,0 +1,91 @@
+config:
+  target: "{{ $processEnvironment.API_URL | default('http://localhost:3001/api') }}"
+  phases:
+    - duration: 15
+      arrivalRate: 1
+      name: "1 user - Baseline"
+    - duration: 15
+      arrivalRate: 5
+      rampTo: 5
+      name: "5 concurrent users"
+    - duration: 15
+      arrivalRate: 10
+      rampTo: 10
+      name: "10 concurrent users"
+    - duration: 15
+      arrivalRate: 25
+      rampTo: 25
+      name: "25 concurrent users"
+    - duration: 30
+      arrivalRate: 50
+      rampTo: 50
+      name: "50 concurrent users - Sustained"
+  
+  variables:
+    endpoints:
+      - "/runs"
+      - "/reports"
+      - "/modes"
+  
+  processor: "./performance-processor.js"
+  
+  defaults:
+    headers:
+      User-Agent: "Artillery-LoadTest/1.0"
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Compliance API Load Test"
+    description: "Simulates realistic user load with mixed read/write operations"
+    weight: 100
+    flow:
+      # Browse runs
+      - get:
+          url: "/runs"
+          expect:
+            - statusCode: [200, 304]
+          capture:
+            - json: "$[0].id"
+              as: "runId"
+
+      # Fetch reports
+      - get:
+          url: "/reports"
+          expect:
+            - statusCode: [200]
+
+      # Get modes
+      - get:
+          url: "/modes"
+          expect:
+            - statusCode: [200]
+
+      # Simulate think time
+      - think: 2
+
+      # Execute compliance run (less frequent)
+      - post:
+          url: "/runs"
+          json:
+            reviewedDate: "2026-03-14"
+            mode: "standard"
+          expect:
+            - statusCode: [200, 201, 400]
+          capture:
+            - json: "$.runId"
+              as: "newRunId"
+
+      # Fetch specific run details
+      - get:
+          url: "/runs/{{ runId }}"
+          expect:
+            - statusCode: [200]
+
+      # Simulate user reading reports
+      - think: 3
+
+      # Get report details
+      - get:
+          url: "/reports"
+          expect:
+            - statusCode: [200]
