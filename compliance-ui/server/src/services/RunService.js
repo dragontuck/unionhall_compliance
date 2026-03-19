@@ -112,8 +112,8 @@ export class RunService {
                     UNION
                     SELECT DISTINCT r.EmployerId, ContractorId, r.ContractorName
                     FROM CMP_Reports r
-					left join dbo.CMP_ContractorBlacklist b on r.EmployerId = b.EmployerID and b.DeletedOn is not null
-					WHERE RunId=@prevRunId and b.Id is null;`;
+					left join dbo.CMP_ContractorBlacklist b on r.EmployerId = b.EmployerID and b.DeletedOn is null
+					WHERE RunId=@prevRunId and r.DeletedOn is null and b.Id is null;`;
 
                 const contractorsRes = await tx
                     .request()
