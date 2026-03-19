@@ -1,3 +1,6 @@
 /node_modules
 **/node_modules
 /compliance-ui/coverage
+compliance-ui/playwright-report/index.html
+compliance-ui/test-results
+/compliance-ui/playwright-report/data

@@ -32,12 +32,15 @@ export class ComplianceEngine {
    * @returns {Object} Compliance state object
    */
   createComplianceState(seed, allowedDirect) {
+    const directCount = seed && seed.DirectCount != null ? Number(seed.DirectCount) : 0;
+    const compliance = seed ? this.statusToCode(seed.ComplianceStatus) : 'C'
     const state = {
       compliance: seed ? this.statusToCode(seed.ComplianceStatus) : 'C',
       dispatchNeeded: seed && seed.DispatchNeeded != null ? Number(seed.DispatchNeeded) : 0,
-      directCount: seed && seed.DirectCount != null ? Number(seed.DirectCount) : 0,
+      directCount: directCount,
       nextHireDispatch: seed && seed.NextHireDispatch ? String(seed.NextHireDispatch) : 'N',
     };
+    state.compliance = compliance == 'C' ? 'C' : (state.directCount > allowedDirect) ? 'N' : 'C';
     state.nextHireDispatch = state.dispatchNeeded > 0 || state.directCount >= allowedDirect ? 'Y' : 'N';
     return state;
   }
@@ -60,6 +63,7 @@ export class ComplianceEngine {
       } else {
         state.dispatchNeeded = Math.max(0, state.dispatchNeeded - 1);
         state.directCount = Math.max(0, state.directCount - 1);
+        state.compliance = state.directCount > allowedDirect ? 'N' : 'C';
       }
     } else {
       state.directCount += 1;

@@ -105,11 +105,15 @@ export class RunService {
 
                 // Contractor list for this run.
                 const contractorsQuery = `
-                    SELECT DISTINCT EmployerId, ContractorId, ContractorName
-                    FROM dbo.CMP_HireData WHERE ReviewedDate >= @reviewed
+                    SELECT DISTINCT h.EmployerId, ContractorId, h.ContractorName
+                    FROM dbo.CMP_HireData h 
+					left join dbo.CMP_ContractorBlacklist b on h.EmployerId = b.EmployerID and b.DeletedOn is not null
+					WHERE ReviewedDate >= @reviewed and b.Id is null
                     UNION
-                    SELECT DISTINCT EmployerId, ContractorId, ContractorName
-                    FROM CMP_Reports WHERE RunId=@prevRunId;`;
+                    SELECT DISTINCT r.EmployerId, ContractorId, r.ContractorName
+                    FROM CMP_Reports r
+					left join dbo.CMP_ContractorBlacklist b on r.EmployerId = b.EmployerID and b.DeletedOn is not null
+					WHERE RunId=@prevRunId and b.Id is null;`;
 
                 const contractorsRes = await tx
                     .request()
