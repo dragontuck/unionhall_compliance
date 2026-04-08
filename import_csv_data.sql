@@ -1,0 +1,33 @@
+USE UnionHallUI;
+
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','33.OSHA-30 (must be valid within 5 years)',11);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','31.MEWP (Mobile Elevated Working Platforms) Lift Certification (must be valid within 5 yrs unless expiration is earlier than 5 yrs.)',10);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','29.Merck Contractor Trades Safety Orientation',7);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','30.Merck Rahway Kenilworth GSE Safety Orientation',7);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','20.Fall Protection Certification',4);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','32.OSHA-10 (must be valid within 5 years)',4);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','38. SWAC Card (Secure Worker Access Consortium)',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification',' 01.Siding & Decking Certificate',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','02.ACAD Advanced Certificate',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Certification','51.Certified Gas Metal Arc Welding D 9.1 (GMAW) Certified Galvanized Metal (GMAW) - All Positions',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','20.Field',34);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','23.Hangers 2 weeks exp or more',16);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','39.Lift Work 0-75',8);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','22.General Foreperson1 year exp or more',3);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','41.Shop Assembly Shop - yes',3);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','50.Uncertified Welder 1 mos exp or more',3);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','21.Foreperson 3 mos exp or more',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','45.Brake Operator 1mos exp or more',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','Install Architectural/Metal Roof, 3 mos exp',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','Scissor/BOOM Lifts (MEWP)',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','Siding 3 mos. exp',2);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','26.Linen and Garbage Chutes 1 week exp or more',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','34.Trimble Total Station 2 weeks Experience or more',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','37.Roofer 3 mos exp or more',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','40.Lift Work 75 Feet and above (HiFlyers)',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','42.Shop Coil Line 1 mos exp or more',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','43.Spiral Machine Operator 1 mos exp or more',1);
+INSERT INTO dbo.Skill_Certification_Frequencies (Type, Name, Frequency) VALUES ('Skill','47.Shop Plasma Machine 1 mos exp',1);
+
+SELECT 'Import Complete' as Status;
+SELECT Type, COUNT(*) as RecordCount, SUM(Frequency) as TotalFrequency FROM dbo.Skill_Certification_Frequencies GROUP BY Type;
