@@ -1,7 +1,7 @@
 const sql = require('mssql');
 
 const config = {
-    server: 'DESKTOP-DI29PVA\\MSSQLSERVER01',
+    server: 'SMTUCKER01\\MSSQLSERVER01',
     database: 'UnionHall',
     options: {
         encrypt: false,

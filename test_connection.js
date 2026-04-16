@@ -3,8 +3,8 @@ const sql = require('mssql');
 const dbConfig = {
     user: 'uh_admin',
     password: 'uh_admin',
-    server: 'DESKTOP-DI29PVA\\MSSQLSERVER01',
-    database: 'UnionHall',
+    server: 'SMTUCKER01\\MSSQLSERVER01',
+    database: 'UnionHallUI',
     options: {
         encrypt: false,
         trustServerCertificate: true

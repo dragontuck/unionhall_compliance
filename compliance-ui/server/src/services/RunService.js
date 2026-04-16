@@ -4,6 +4,7 @@
  * Orchestrates run-related business logic using repositories
  */
 import sql from 'mssql';
+import { addAbortListener } from 'node:events';
 import XLSX from 'xlsx';
 
 export class RunService {
@@ -156,14 +157,17 @@ export class RunService {
                         .input('contractorId', sql.Int, contractorId)
                         .input('reviewed', sql.Date, reviewedDate)
                         .query(
-                            `SELECT EmployerId, StartDate, ReviewedDate, MemberName, IANumber, HireType
+                            `with s as 
+                            (SELECT EmployerId, StartDate, ReviewedDate, MemberName, IANumber, HireType, CASE WHEN HireType='Dispatch' then 0 else 1 END as HireTypeOrder
                              FROM dbo.CMP_HireData
                              WHERE ContractorID = @contractorId
                                AND CAST(ReviewedDate AS DATE) = @reviewed
-                             ORDER BY StartDate, ReviewedDate, IANumber;`
+                            )
+                            select * from s
+                            ORDER BY HireTypeOrder,StartDate, ReviewedDate, IANumber;`
                         );
 
-                    const hires = hiresRes.recordset;
+                    const hires = hiresRes.recordset.sort((a, b) => a.HireTypeOrder - b.HireTypeOrder);
 
                     if (hires.length) {
                         console.log(`Processing ${hires.length} hires for contractor ${contractorName}`);
