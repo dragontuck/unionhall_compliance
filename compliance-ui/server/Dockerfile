@@ -4,7 +4,7 @@
 #        docker run -p 3001:3001 --env-file .env compliance-api:2.0.0
 
 # Stage 1: Build stage
-FROM node:18-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -44,7 +44,7 @@ RUN if [ -d compliance-api-* ]; then \
 RUN npm install --production --omit=dev
 
 # Stage 2: Runtime stage
-FROM node:18-alpine
+FROM node:25-alpine
 
 LABEL maintainer="Compliance API"
 LABEL description="Compliance Management API - Production Ready"

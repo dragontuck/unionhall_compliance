@@ -35,6 +35,7 @@ export interface ComplianceReportDetail {
     dispatchNeeded: number;
     nextHireDispatch: string;
     reviewedDate: string;
+    listPosition: number;
     modeName: string;
 }
 
@@ -47,6 +48,7 @@ export interface RecentHireData {
     'Reviewed Date': string;
     'Compliance Status': string;
     'Dispatch Needed': number;
+    'List Position': number;
 }
 
 
@@ -70,6 +72,7 @@ export interface HireData {
     EndDate: string;
     ContractorID: number;
     ReviewedDate: string;
+    ListPosition: number;
 }
 
 export interface Mode {

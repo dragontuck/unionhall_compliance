@@ -74,7 +74,8 @@ export class HireDataService {
                     excludedComplianceRules: row['Excluded Compliance Rules'] || null,
                     createdByUserName: row['Created By User Name'] || null,
                     createdByName: row['Created By Name'] || null,
-                    createdOn: toDate(row['Created on'])
+                    createdOn: toDate(row['Created on']),
+                    listPosition: toInt(row['List Position at Dispatch']) || null,
                 };
 
                 await this.hireRepo.createReviewedHire(hireData);

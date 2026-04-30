@@ -228,6 +228,7 @@ export function ReportViewer() {
         { key: 'dispatchNeeded', label: 'Dispatch Needed', sortable: true },
         { key: 'nextHireDispatch', label: 'Next Hire Dispatch', sortable: true },
         { key: 'reviewedDate', label: 'Reviewed Date', sortable: true },
+        { key: 'listPosition', label: 'List Position', sortable: true},
         { key: 'modeName', label: 'Mode', sortable: false },
     ];
     const rawHiresColumns: { key: keyof HireData; label: string; sortable: boolean }[] = [
@@ -239,6 +240,7 @@ export function ReportViewer() {
         { key: 'EmployerID', label: 'Employer ID', sortable: true },
         { key: 'IsReviewed', label: 'Reviewed', sortable: true },
         { key: 'ReviewedDate', label: 'Reviewed Date', sortable: true },
+        { key: 'ListPosition', label: 'List Position', sortable: true},
     ];
     const reportColumns: { key: keyof ComplianceReport; label: string; sortable: boolean; render?: any }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },
@@ -312,8 +314,9 @@ export function ReportViewer() {
         { key: 'Start Date', label: 'Start Date', sortable: true },
         { key: 'Hire Type', label: 'Hire Type', sortable: true },
         { key: 'Reviewed Date', label: 'Reviewed Date', sortable: true },
-        { key: 'Compliance Status', label: 'Reviewed Date', sortable: true },
-        { key: 'Dispatch Needed', label: 'Reviewed Date', sortable: true },
+        { key: 'Compliance Status', label: 'Compliance Status', sortable: true },
+        { key: 'Dispatch Needed', label: 'Dispatch Needed', sortable: true },
+        { key: 'List Position', label: 'List Position', sortable: true },
     ];
 
     return (

@@ -44,7 +44,8 @@ export class HireDataRepository extends MssqlRepository {
             hireType as [Hire Type], 
             CONVERT(nvarchar, ReviewedDate, 25) as [Reviewed Date],
             ComplianceStatus as [Compliance Status], 
-            DispatchNeeded as [Dispatch Needed] 
+            DispatchNeeded as [Dispatch Needed],
+            ListPosition as [List Position]
         from [dbo].[CMP_ReportDetails] where RunID = @runId`, { runId });
     }
 
@@ -78,14 +79,14 @@ export class HireDataRepository extends MssqlRepository {
         const {
             employerId, contractorName, memberName, iaNumber, startDate, hireType,
             isReviewed, isExcluded, endDate, contractorId, isInactive, reviewedDate,
-            excludedComplianceRules, createdByUserName, createdByName, createdOn
+            excludedComplianceRules, createdByUserName, createdByName, createdOn, listPosition
         } = hireData;
 
         return this.execute(`
             INSERT INTO dbo.CMP_ReviewedHires
             (EmployerID, ContractorName, MemberName, IANumber, StartDate, HireType, 
              IsReviewed, IsExcluded, EndDate, ContractorID, IsInactive, ReviewedDate,
-             ExcludedComplianceRules, CreatedByUserName, CreatedByName, CreatedOn)
+             ExcludedComplianceRules, CreatedByUserName, CreatedByName, CreatedOn, ListPosition)
             SELECT
                 @employerId, @contractorName, @memberName, @iaNumber, 
                 CONVERT(DATETIME2(0), @startDate, 101), @hireType, @isReviewed, @isExcluded,
@@ -95,7 +96,7 @@ export class HireDataRepository extends MssqlRepository {
                 CASE WHEN @reviewedDate IS NULL OR @reviewedDate = '' THEN NULL 
                      ELSE TRY_CONVERT(DATETIMEOFFSET(7), @reviewedDate) END,
                 @excludedComplianceRules, @createdByUserName, @createdByName,
-                CONVERT(DATETIME2(0), @createdOn, 101)
+                CONVERT(DATETIME2(0), @createdOn, 101), @listPosition
             WHERE NOT EXISTS (
                 SELECT 1 FROM dbo.CMP_ReviewedHires 
                 WHERE EmployerID = @employerId AND IANumber = @iaNumber 
@@ -117,7 +118,8 @@ export class HireDataRepository extends MssqlRepository {
             excludedComplianceRules: excludedComplianceRules || null,
             createdByUserName: createdByUserName || null,
             createdByName: createdByName || null,
-            createdOn
+            createdOn,
+            listPosition: listPosition || null,
         });
     }
 }

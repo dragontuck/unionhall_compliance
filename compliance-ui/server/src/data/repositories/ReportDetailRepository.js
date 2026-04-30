@@ -61,6 +61,7 @@ export class ReportDetailRepository extends MssqlRepository {
                 d.dispatchNeeded, 
                 d.nextHireDispatch, 
                 CONVERT(nvarchar, d.reviewedDate, 25) as reviewedDate, 
+                d.listPosition,
                 m.Mode_Name as modeName 
             FROM dbo.CMP_ReportDetails d
             INNER JOIN dbo.CMP_Runs r ON d.RunId = r.Id
@@ -84,16 +85,16 @@ export class ReportDetailRepository extends MssqlRepository {
         const {
             runId, employerId, contractorId, contractorName, memberName,
             iaNumber, startDate, hireType, complianceStatus, directCount,
-            dispatchNeeded, nextHireDispatch, reviewedDate
+            dispatchNeeded, nextHireDispatch, reviewedDate, listPosition
         } = detailData;
 
         return this.execute(`
             INSERT INTO dbo.CMP_ReportDetails
             (RunId, EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType,
-             ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate)
+             ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate, ListPosition)
             VALUES
             (@runId, @employerId, @contractorId, @contractorName, @memberName, @iaNumber, @startDate, @hireType,
-             @complianceStatus, @directCount, @dispatchNeeded, @nextHireDispatch, @reviewedDate)
+             @complianceStatus, @directCount, @dispatchNeeded, @nextHireDispatch, @reviewedDate, @listPosition)
         `, {
             runId,
             employerId,
@@ -107,7 +108,8 @@ export class ReportDetailRepository extends MssqlRepository {
             directCount,
             dispatchNeeded,
             nextHireDispatch,
-            reviewedDate
+            reviewedDate,
+            listPosition
         });
     }
 
@@ -123,7 +125,7 @@ export class ReportDetailRepository extends MssqlRepository {
             ), 
             Detail AS (
                 SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, 
-                       ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate 
+                       ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate, ListPosition
                 FROM dbo.CMP_ReportDetails 
                 WHERE DeletedOn IS NULL AND RunId IN (
                     SELECT MAX(id) as Id FROM dbo.CMP_Runs 
@@ -134,7 +136,7 @@ export class ReportDetailRepository extends MssqlRepository {
             Ranked AS (
                 SELECT h.EmployerId, h.ContractorID AS ContractorId, h.ContractorName, h.MemberName, 
                        h.IANumber, h.StartDate, h.HireType, h.ComplianceStatus, h.DirectCount, 
-                       h.DispatchNeeded, h.NextHireDispatch, h.ReviewedDate, 
+                       h.DispatchNeeded, h.NextHireDispatch, h.ReviewedDate, h.ListPosition,
                        ROW_NUMBER() OVER (PARTITION BY h.EmployerId, h.ContractorID 
                                          ORDER BY h.ReviewedDate DESC, h.StartDate DESC, h.IANumber DESC) AS rn 
                 FROM Detail h JOIN Contractors c 
@@ -142,7 +144,7 @@ export class ReportDetailRepository extends MssqlRepository {
             ) 
             SELECT employerId, contractorId, contractorName, memberName, iaNumber, CONVERT(nvarchar, startDate, 101) as startDate, hireType, 
                    complianceStatus, directCount, dispatchNeeded, nextHireDispatch, 
-                   CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate, RN as [Order #]
+                   CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate, listPosition, RN as [Order #]
             FROM Ranked 
             WHERE rn <= 4 
             ORDER BY ContractorName, ReviewedDate ASC, StartDate ASC
