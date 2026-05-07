@@ -158,7 +158,7 @@ export class RunService {
                         .input('reviewed', sql.Date, reviewedDate)
                         .query(
                             `with s as 
-                            (SELECT EmployerId, StartDate, ReviewedDate, MemberName, IANumber, HireType, CASE WHEN HireType='Dispatch' then 0 else 1 END as HireTypeOrder
+                            (SELECT EmployerId, StartDate, ReviewedDate, MemberName, IANumber, HireType, CASE WHEN HireType='Dispatch' then 0 else 1 END as HireTypeOrder, ListPosition
                              FROM dbo.CMP_HireData
                              WHERE ContractorID = @contractorId
                                AND CAST(ReviewedDate AS DATE) = @reviewed
@@ -191,13 +191,14 @@ export class RunService {
                                     .input('dispatchNeeded', sql.Int, state.dispatchNeeded)
                                     .input('nextHireDispatch', sql.VarChar(1), state.nextHireDispatch)
                                     .input('reviewedDate', sql.DateTimeOffset, h.ReviewedDate)
+                                    .input('listPosition', sql.NVarChar(50), h.ListPosition)
                                     .query(
                                         `INSERT INTO dbo.CMP_ReportDetails
                                          (RunId, EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType,
-                                          ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate)
+                                          ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate, ListPosition)
                                          VALUES
                                          (@runId, @employerId, @contractorId, @contractorName, @memberName, @iaNumber, @startDate, @hireType,
-                                          @complianceStatus, @directCount, @dispatchNeeded, @nextHireDispatch, @reviewedDate);`
+                                          @complianceStatus, @directCount, @dispatchNeeded, @nextHireDispatch, @reviewedDate, @listPosition);`
                                     );
                             }
                         }

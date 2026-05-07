@@ -124,9 +124,11 @@ export class ReportDetailRepository extends MssqlRepository {
                 SELECT DISTINCT EmployerId, ContractorId FROM dbo.CMP_Reports WHERE RunId = @runId
             ), 
             Detail AS (
-                SELECT EmployerId, ContractorId, ContractorName, MemberName, IANumber, StartDate, HireType, 
-                       ComplianceStatus, DirectCount, DispatchNeeded, NextHireDispatch, ReviewedDate, ListPosition
-                FROM dbo.CMP_ReportDetails 
+                SELECT d.EmployerId, d.ContractorId, d.ContractorName, d.MemberName, d.IANumber, d.StartDate, d.HireType, 
+                       d.ComplianceStatus, d.DirectCount, d.DispatchNeeded, d.NextHireDispatch, d.ReviewedDate, d.ListPosition, m.Mode_Name as modeName 
+                FROM dbo.CMP_ReportDetails d
+                INNER JOIN dbo.CMP_Runs r ON d.RunId = r.Id
+                INNER JOIN CMP_Modes m ON r.ModeId = m.Id
                 WHERE DeletedOn IS NULL AND RunId IN (
                     SELECT MAX(id) as Id FROM dbo.CMP_Runs 
                     GROUP BY ReviewedDate 
@@ -136,7 +138,7 @@ export class ReportDetailRepository extends MssqlRepository {
             Ranked AS (
                 SELECT h.EmployerId, h.ContractorID AS ContractorId, h.ContractorName, h.MemberName, 
                        h.IANumber, h.StartDate, h.HireType, h.ComplianceStatus, h.DirectCount, 
-                       h.DispatchNeeded, h.NextHireDispatch, h.ReviewedDate, h.ListPosition,
+                       h.DispatchNeeded, h.NextHireDispatch, h.ReviewedDate, h.ListPosition, h.modeName,
                        ROW_NUMBER() OVER (PARTITION BY h.EmployerId, h.ContractorID 
                                          ORDER BY h.ReviewedDate DESC, h.StartDate DESC, h.IANumber DESC) AS rn 
                 FROM Detail h JOIN Contractors c 
@@ -144,7 +146,7 @@ export class ReportDetailRepository extends MssqlRepository {
             ) 
             SELECT employerId, contractorId, contractorName, memberName, iaNumber, CONVERT(nvarchar, startDate, 101) as startDate, hireType, 
                    complianceStatus, directCount, dispatchNeeded, nextHireDispatch, 
-                   CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate, listPosition, RN as [Order #]
+                   CONVERT(nvarchar, ReviewedDate, 25) as reviewedDate, listPosition, modeName, RN as [Order #]
             FROM Ranked 
             WHERE rn <= 4 
             ORDER BY ContractorName, ReviewedDate ASC, StartDate ASC
