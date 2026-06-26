@@ -40,7 +40,7 @@ export class ComplianceEngine {
       directCount: directCount,
       nextHireDispatch: seed && seed.NextHireDispatch ? String(seed.NextHireDispatch) : 'N',
     };
-    state.compliance = compliance == 'C' ? 'C' : (state.directCount > allowedDirect) ? 'N' : 'C';
+    state.compliance = compliance == 'C' ? 'C' : ((state.directCount > allowedDirect) || (state.directCount>0 && state.dispatchNeeded))? 'N' : 'C';
     state.nextHireDispatch = state.dispatchNeeded > 0 || state.directCount >= allowedDirect ? 'Y' : 'N';
     return state;
   }

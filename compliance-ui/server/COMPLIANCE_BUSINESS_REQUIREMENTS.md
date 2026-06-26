@@ -34,13 +34,22 @@ The system shall show whether the next hire must be a dispatch hire.
 
 ## Mode Behavior
 
+### Compliance during restoration
+When a run starts and restores a contractor's prior state, compliance is determined by:
+
+- If previously compliant: contractor remains compliant
+- If previously noncompliant: contractor remains noncompliant if EITHER:
+  - The direct hire count still exceeds the mode's allowed limit, OR
+  - There are still pending dispatch hires that must be worked off (even if the direct count is below the limit)
+
 ### Changing from 2:1 to 3:1
 When the business changes from `2:1` to `3:1`, the direct-hire allowance increases.
 
 Expected business effect:
 
-- Some contractors who were previously flagged may now become compliant
-- The next-hire dispatch flag may turn off if the contractor is now within the higher limit
+- Some contractors who were previously flagged may now become compliant (if their direct count is now below 3)
+- Contractors with pending dispatch obligations may still remain flagged until those dispatches are processed
+- The next-hire dispatch flag may turn off if the contractor is now within the higher limit and has no pending dispatches
 - Existing history should stay intact; only future runs should use the new mode
 
 ### Changing from 3:1 to 2:1
@@ -50,6 +59,7 @@ Expected business effect:
 
 - More contractors may become noncompliant because the limit is tighter
 - The next-hire dispatch flag may turn on sooner
+- Contractors already flagged as noncompliant remain flagged if they have pending dispatch work
 - Existing history should stay intact; only future runs should use the new mode
 
 ## Expected Results by Mode Change

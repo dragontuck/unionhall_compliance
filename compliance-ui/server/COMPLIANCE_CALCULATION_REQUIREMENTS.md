@@ -59,10 +59,14 @@ On state restoration, compliance shall be resolved as follows:
 
 - If the seed status is `Compliant`, the restored state shall remain compliant.
 - If the seed status is `Noncompliant`, the restored state shall be set to:
-  - `Noncompliant` when `DirectCount` is greater than the current `allowedDirect`
-  - `Compliant` when `DirectCount` is less than or equal to the current `allowedDirect`
+  - `Noncompliant` when either:
+    - `DirectCount` is greater than the current `allowedDirect`, OR
+    - `DirectCount` is greater than `0` AND `DispatchNeeded` is greater than `0`
+  - `Compliant` when `DirectCount` is less than or equal to the current `allowedDirect` AND (`DispatchNeeded` is `0` OR `DirectCount` is `0`)
 
-This means a mode increase can restore compliance for a seed that was previously noncompliant under a tighter threshold.
+This means:
+- A mode increase may restore compliance for a seed that was previously noncompliant under a tighter threshold
+- A noncompliant seed with pending dispatch obligations maintains noncompliant status during restoration, even if the direct count is below threshold
 
 ### 4. Next-hire dispatch on restoration
 After restoration, `NextHireDispatch` shall be set to `Y` when either of the following is true:
@@ -120,7 +124,8 @@ Expected effects on restored state:
 
 - Contractors with `DirectCount` of `0`, `1`, or `2` shall remain compliant if they were compliant in the seed
 - `NextHireDispatch` may change from `Y` to `N` when the contractor is now below the higher threshold and has no dispatch obligation
-- Contractors that were previously noncompliant may become compliant if their restored `DirectCount` is less than or equal to `3`
+- Contractors that were previously noncompliant may become compliant only if their restored `DirectCount` is less than or equal to `3` AND `DispatchNeeded` is `0`
+- Contractors with `DispatchNeeded > 0` shall remain noncompliant even if `DirectCount` is now within the higher threshold
 - `DispatchNeeded` shall remain as stored until dispatch hires are actually processed
 
 ### 3. Change from 3:1 to 2:1
@@ -139,7 +144,7 @@ Expected effects on restored state:
 | --- | --- | --- | --- | --- |
 | Compliant, DirectCount = 2, DispatchNeeded = 0 | 2:1 to 3:1 | Compliant | 0 | N |
 | Compliant, DirectCount = 2, DispatchNeeded = 0 | 3:1 to 2:1 | Compliant | 0 | Y |
-| Noncompliant, DirectCount = 3, DispatchNeeded = 1 | 2:1 to 3:1 | Compliant | 1 | Y |
+| Noncompliant, DirectCount = 3, DispatchNeeded = 1 | 2:1 to 3:1 | Noncompliant | 1 | Y |
 | Noncompliant, DirectCount = 3, DispatchNeeded = 1 | 3:1 to 2:1 | Noncompliant | 1 | Y |
 | Compliant, DirectCount = 3, DispatchNeeded = 0 | 2:1 to 3:1 | Compliant | 0 | Y |
 | Compliant, DirectCount = 3, DispatchNeeded = 0 | 3:1 to 2:1 | Compliant | 0 | Y |
