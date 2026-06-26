@@ -106,6 +106,26 @@ Use this index to find the right documentation for your needs.
   - Contributing guidelines
 - **Read Time:** 15 minutes
 
+#### [COMPLIANCE_CALCULATION_REQUIREMENTS.md](COMPLIANCE_CALCULATION_REQUIREMENTS.md)
+- **Audience:** Business analysts, product owners, developers
+- **Purpose:** Define how compliance status, dispatch needed, and next-hire dispatch are calculated
+- **Contains:**
+  - Compliance state definitions
+  - Direct hire and dispatch hire rules
+  - Mode change behavior for 2:1 and 3:1
+  - Transition matrix examples
+- **Read Time:** 10 minutes
+
+#### [COMPLIANCE_BUSINESS_REQUIREMENTS.md](COMPLIANCE_BUSINESS_REQUIREMENTS.md)
+- **Audience:** Business stakeholders, operations, product owners
+- **Purpose:** Business-facing overview of compliance status, dispatch needed, and next-hire dispatch
+- **Contains:**
+  - Plain-language compliance rules
+  - Mode change effects for 2:1 and 3:1
+  - Reporting expectations
+  - Business acceptance criteria
+- **Read Time:** 5 minutes
+
 ### Distribution & Release
 
 #### [DISTRIBUTION_GUIDE.md](DISTRIBUTION_GUIDE.md)
