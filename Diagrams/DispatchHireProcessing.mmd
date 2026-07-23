@@ -1,0 +1,49 @@
+flowchart TD
+
+    subgraph ProcessHire["Phase 1 - Process Dispatch Hire"]
+        A1["Dispatch Hire Received"]
+    end
+
+    subgraph RouteCompliance["Phase 2 - Route Compliance Check"]
+        B1{"Is Compliance 'C'<br/>(Compliant)?"}
+        B2{"Is Compliance 'N' AND<br/>dispatchNeeded == 1?"}
+        B3{"NO to BOTH conditions?<br/>(Compliance = 'N' AND DN > 1)"}
+        
+        A1 --> B1
+        A1 --> B2
+        A1 --> B3
+    end
+
+    subgraph ResetLogic["Phase 3A - Full Reset Path"]
+        C1["Full Reset<br/>Set C = 'C'<br/>Set DC = 0<br/>Set DN = 0"]
+        C2["Contractor is back to<br/>clean compliant state"]
+
+        B1 -->|YES| C1
+        B2 -->|YES| C1
+        C1 --> C2
+    end
+
+    subgraph ReductionLogic["Phase 3B - Partial Reduction Path"]
+        D1["Partial Reduction<br/>Decrement DN by 1<br/>Decrement DC by 1 (if DC > 0)<br/>Compliance stays 'N'"]
+        D2["Requirement partially met,<br/>still more dispatches needed"]
+
+        B3 -->|YES| D1
+        D1 --> D2
+    end
+
+    subgraph UpdateFlag["Phase 4 - Update Next Hire Flag"]
+        E1["Continue"]
+        E2{"IF (dispatchNeeded > 0 OR<br/>directCount >= allowedDirect)"}
+        E3["nextHireDispatch = 'Y'"]
+        E4["nextHireDispatch = 'N'"]
+        E5["Record State & Continue"]
+
+        C2 --> E1
+        D2 --> E1
+
+        E1 --> E2
+        E2 -->|YES| E3
+        E2 -->|NO| E4
+        E3 --> E5
+        E4 --> E5
+    end

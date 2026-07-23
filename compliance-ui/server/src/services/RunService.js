@@ -164,10 +164,10 @@ export class RunService {
                                AND CAST(ReviewedDate AS DATE) = @reviewed
                             )
                             select * from s
-                            ORDER BY HireTypeOrder,StartDate, ReviewedDate, IANumber;`
+                            ORDER BY ReviewedDate;`
                         );
-
-                    const hires = hiresRes.recordset.sort((a, b) => a.HireTypeOrder - b.HireTypeOrder);
+                    // ORDER BY HireTypeOrder,StartDate, ReviewedDate, IANumber;` -- Previous incorrect logic 2026-07-18
+                    const hires = hiresRes.recordset;
 
                     if (hires.length) {
                         console.log(`Processing ${hires.length} hires for contractor ${contractorName}`);

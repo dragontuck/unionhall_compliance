@@ -1,0 +1,61 @@
+flowchart TD
+
+subgraph Setup["Phase 1 - Setup"]
+    A1["1. User Specifies Run Parameters<br/>Reviewed Date<br/>Mode (2To1 or 3To1)<br/>Optional Dry Run"]
+    A2["2. Create Run Record<br/>Generate Run ID<br/>Report Date = Today<br/>Reviewed Date = Parameter<br/>Store Mode"]
+    A3{"Previous Run Found?"}
+    A4["Load Previous State"]
+    A5["Initialize Clean State"]
+
+    A1 --> A2
+    A2 --> A3
+    A3 -->|s21| A4
+    A3 -->|s22| A5
+end
+
+subgraph Discover["Phase 2 - Discover"]
+    B1["Build Contractor List<br/>New Hires<br/>Prior Run Contractors<br/>Exclude Blacklisted"]
+end
+
+A4 --> B1
+A5 --> B1
+
+subgraph Process["Phase 3 - Process Contractors"]
+
+    C1["Load Historical State"]
+    C2["Fetch and Sort Hires"]
+    C3["Process Each Hire"]
+    C4["Generate Summary"]
+    C5{"More Contractors?"}
+
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+    C4 --> C5
+    C5 -->|s23| C1
+
+end
+
+B1 --> C1
+
+subgraph Finalize["Phase 4 - Finalize"]
+
+    D1{"Finalize Transaction"}
+
+    D2["Rollback<br/>Dry Run"]
+    D3["Commit"]
+    D4["Rollback<br/>Error"]
+
+    D5["Export Excel Workbook<br/>Detail<br/>Report<br/>Last 4 Hires<br/>Recent Hires"]
+
+    D1 -->|s24| D2
+    D1 -->|s25| D3
+    D1 -->|s26| D4
+
+    D2 --> D5
+    D3 --> D5
+    D4 --> D5
+
+end
+
+C5 -->|s27| D1

@@ -130,6 +130,22 @@ describe('ComplianceEngine', () => {
             expect(state.nextHireDispatch).toBe('Y');
         });
 
+
+        it('GP Systems issue converting from 2to1 to 3to1', () => {
+            const seed = {
+                ComplianceStatus: 'Compliant',
+                DispatchNeeded: 1,
+                DirectCount: 3,
+                NextHireDispatch: 'Y'
+            };
+
+            const state = engine.createComplianceState(seed, 3);
+
+            expect(state.compliance).toBe('N');
+            expect(state.dispatchNeeded).toBe(1);
+            expect(state.directCount).toBe(3);
+        });
+
         it('should restore compliance status from seed 3to1 -> 2to1', () => {
             const seed = {
                 ComplianceStatus: 'Compliant',
@@ -335,7 +351,7 @@ describe('ComplianceEngine', () => {
 
             const state = engine.createComplianceState(seed, 3);
 
-            expect(state.compliance).toBe('C');
+            expect(state.compliance).toBe('N');
             expect(state.dispatchNeeded).toBe(2);
             expect(state.directCount).toBe(3);
         });

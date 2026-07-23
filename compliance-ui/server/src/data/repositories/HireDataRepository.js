@@ -17,7 +17,7 @@ export class HireDataRepository extends MssqlRepository {
      * @returns {Promise<Array>} Array of hire records
      */
     async getHireData(filters = {}, limit = 2000) {
-        let query = `SELECT TOP ${limit} * FROM CMP_HireData WHERE 1=1`;
+        let query = `SELECT TOP ${limit} * FROM CMP_HireData WHERE 1=1 Order By Id`;
         const params = {};
 
         if (filters.reviewedDate) {
@@ -28,6 +28,7 @@ export class HireDataRepository extends MssqlRepository {
         query += ' ORDER BY ContractorName, StartDate, MemberName';
         return this.query(query, params);
     }
+
 
     /**
      * Get recent hires from latest reviewed date

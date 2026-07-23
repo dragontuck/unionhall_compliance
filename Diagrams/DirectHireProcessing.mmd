@@ -1,0 +1,53 @@
+flowchart TD
+
+    subgraph ProcessHire["Phase 1 - Process Direct Hire"]
+        A1["Direct Hire Received"]
+        A2["Increment DirectCount by 1"]
+        
+        A1 --> A2
+    end
+
+    subgraph RouteCompliance["Phase 2 - Route Compliance Check"]
+        B1{"Is Compliance 'C' (Compliant)?"}
+        B2{"Compliance was 'N' (Noncompliant)?"}
+        
+        A2 --> B1
+        A2 --> B2
+    end
+
+    subgraph CheckC["Phase 3A - Compliant Logic"]
+        C1{"Is DirectCount ==<br/>(allowedDirect + 1)?"}
+        C2["Set Compliance = 'N'<br/>Set dispatchNeeded = 1"]
+        C3["Stay 'C'<br/>(no change)"]
+
+        B1 -->|YES| C1
+        C1 -->|YES| C2
+        C1 -->|NO| C3
+    end
+
+    subgraph CheckN["Phase 3B - Noncompliant Logic"]
+        D1{"Is DirectCount ><br/>(allowedDirect + 1)?"}
+        D2["Increment dispatchNeeded by 1<br/>Compliance stays 'N'"]
+
+        B2 -->|YES| D1
+        D1 -->|YES| D2
+    end
+
+    subgraph UpdateFlag["Phase 4 - Update Next Hire Flag"]
+        E1["Continue"]
+        E2{"IF (dispatchNeeded > 0 OR<br/>directCount >= allowedDirect)"}
+        E3["nextHireDispatch = 'Y'"]
+        E4["nextHireDispatch = 'N'"]
+        E5["Record State & Continue"]
+
+        C2 --> E1
+        C3 --> E1
+        D2 --> E1
+        D1 -->|NO| E1
+
+        E1 --> E2
+        E2 -->|YES| E3
+        E2 -->|NO| E4
+        E3 --> E5
+        E4 --> E5
+    end

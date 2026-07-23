@@ -7,6 +7,7 @@
 export class HireDataService {
     constructor(hireDataRepository) {
         this.hireRepo = hireDataRepository;
+        this.hireNoteRepo = hireNoteRepository; // Make sure hireNoteRepository is passed to the constructor
     }
 
     /**
@@ -87,5 +88,25 @@ export class HireDataService {
         }
 
         return result;
+    }
+
+    /**
+     * Get hire notes for a specific hire
+     * @param {number} hireId - Hire ID
+     * @returns {Promise<Array>} Array of hire note records
+     */
+    async getHireNotes(hireId) {
+        if (!hireId) {
+            throw new Error('Hire ID is required');
+        }
+        return this.hireNoteRepo.getNotesByHire(hireId);
+    }
+
+    async createNote(noteData) {
+        const { hireId } = noteData;
+        if (!hireId) {
+            throw new Error('Hire ID is required');
+        }
+        return this.hireNoteRepo.createNote(noteData);
     }
 }
