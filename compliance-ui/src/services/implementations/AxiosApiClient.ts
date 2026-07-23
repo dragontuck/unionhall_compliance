@@ -132,6 +132,20 @@ export class AxiosApiClient implements IApiClient {
         return data;
     }
 
+    async updateHire(hireId: number, updateData: {
+        reviewedDate?: string;
+        note?: string;
+        changedBy?: string;
+    }): Promise<any> {
+        const { data } = await this.api.put(`/hire-data/${hireId}`, updateData);
+        return data;
+    }
+
+    async getHireNotes(hireId: number): Promise<any[]> {
+        const { data } = await this.api.get<any[]>(`/hire-notes/hire/${hireId}`);
+        return data;
+    }
+
     async getModes(): Promise<Mode[]> {
         const { data } = await this.api.get<Mode[]>('/modes');
         return data;

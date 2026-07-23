@@ -17,7 +17,7 @@ export class HireDataRepository extends MssqlRepository {
      * @returns {Promise<Array>} Array of hire records
      */
     async getHireData(filters = {}, limit = 2000) {
-        let query = `SELECT TOP ${limit} * FROM CMP_HireData WHERE 1=1 Order By Id`;
+        let query = `SELECT TOP ${limit} * FROM CMP_HireData WHERE 1=1`;
         const params = {};
 
         if (filters.reviewedDate) {
@@ -122,5 +122,21 @@ export class HireDataRepository extends MssqlRepository {
             createdOn,
             listPosition: listPosition || null,
         });
+    }
+
+    async updateHireReviewedDate(hireId, newReviewedDate) {
+        console.log(`Repo - Updating hire record ${hireId} with new reviewed date: ${newReviewedDate}`);
+        return this.execute(`
+            UPDATE dbo.CMP_ReviewedHires
+            SET ReviewedDate = @newReviewedDate
+            WHERE Id = @hireId
+        `, { hireId, newReviewedDate });
+    }
+
+    async getHireById(hireId) {
+        return this.query(`
+            SELECT * FROM dbo.CMP_HireData
+            WHERE Id = @hireId
+        `, { hireId });
     }
 }

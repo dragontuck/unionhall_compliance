@@ -21,6 +21,7 @@ import { HireDataService } from '../services/HireDataService.js';
 import { ContractorSnapshotService } from '../services/ContractorSnapshotService.js';
 import { BlacklistService } from '../services/BlacklistService.js';
 import { ComplianceEngine } from '../services/compliance-engine.js';
+import { HireNoteRepository } from '../data/repositories/HireNoteRepository.js';
 
 export class Container {
     constructor(dbPool) {
@@ -94,6 +95,7 @@ export class Container {
         this.registerFactory('reportRepository', (c) => new ReportRepository(this.dbPool));
         this.registerFactory('reportDetailRepository', (c) => new ReportDetailRepository(this.dbPool));
         this.registerFactory('reportNoteRepository', (c) => new ReportNoteRepository(this.dbPool));
+        this.registerFactory('hireNoteRepository', (c) => new HireNoteRepository(this.dbPool));
         this.registerFactory('modeRepository', (c) => new ModeRepository(this.dbPool));
         this.registerFactory('hireDataRepository', (c) => new HireDataRepository(this.dbPool));
         this.registerFactory('contractorSnapshotRepository', (c) => new ContractorSnapshotRepository(this.dbPool));
@@ -128,7 +130,7 @@ export class Container {
         );
 
         this.registerFactory('hireDataService', (c) =>
-            new HireDataService(c.resolve('hireDataRepository'))
+            new HireDataService(c.resolve('hireDataRepository'), c.resolve('hireNoteRepository'))
         );
 
         this.registerFactory('contractorSnapshotService', (c) =>

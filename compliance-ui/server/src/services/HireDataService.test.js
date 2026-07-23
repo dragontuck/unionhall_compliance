@@ -8,6 +8,7 @@ import { HireDataService } from './HireDataService.js';
 describe('HireDataService', () => {
     let service;
     let mockHireDataRepo;
+    let mockHireNoteRepo;
 
     beforeEach(() => {
         mockHireDataRepo = {
@@ -15,9 +16,16 @@ describe('HireDataService', () => {
             getRecentHires: vi.fn(),
             getHiresForContractor: vi.fn(),
             createReviewedHire: vi.fn(),
+            updateHireReviewedDate: vi.fn(),
+            getHireById: vi.fn(),
         };
 
-        service = new HireDataService(mockHireDataRepo);
+        mockHireNoteRepo = {
+            getNotesByHire: vi.fn(),
+            createNote: vi.fn(),
+        };
+
+        service = new HireDataService(mockHireDataRepo, mockHireNoteRepo);
     });
 
     describe('getHireData', () => {

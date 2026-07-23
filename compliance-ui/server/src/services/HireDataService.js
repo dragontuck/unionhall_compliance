@@ -5,9 +5,9 @@
  */
 
 export class HireDataService {
-    constructor(hireDataRepository) {
+    constructor(hireDataRepository, hireNoteRepository) {
         this.hireRepo = hireDataRepository;
-        this.hireNoteRepo = hireNoteRepository; // Make sure hireNoteRepository is passed to the constructor
+        this.hireNoteRepo = hireNoteRepository;
     }
 
     /**
@@ -99,14 +99,39 @@ export class HireDataService {
         if (!hireId) {
             throw new Error('Hire ID is required');
         }
+        console.log(`Fetching notes for hire record ${hireId}`);
         return this.hireNoteRepo.getNotesByHire(hireId);
     }
 
-    async createNote(noteData) {
-        const { hireId } = noteData;
-        if (!hireId) {
-            throw new Error('Hire ID is required');
+    /**
+   * Update report status and metrics
+   * @param {number} hireId - Hire ID
+   * @param {Object} updateData - Data to update { note, reviewedDate, changedBy }
+   * @returns {Promise<Object>} Updated report
+   */
+    async updateHire(hireId, updateData) {
+        const { note, reviewedDate, changedBy } = updateData;
+
+        if (!reviewedDate) {
+            throw new Error('Reviewed date is required');
         }
-        return this.hireNoteRepo.createNote(noteData);
+        console.log(`Updating hire record ${hireId} with reviewedDate: ${reviewedDate}, note: ${note}, changedBy: ${changedBy}`);
+        // Update the report
+        await this.hireRepo.updateHireReviewedDate(hireId, reviewedDate);
+
+        // Add note if provided
+        if (note && changedBy) {
+            console.log(`Adding note for hire record ${hireId}: ${note} by ${changedBy}`);
+            await this.hireNoteRepo.createNote({
+                hireId,
+                note,
+                newReviewedDate: reviewedDate,
+                changedBy
+            });
+        }
+
+        // Return updated report
+        return this.hireRepo.getHireById(hireId);
     }
+
 }

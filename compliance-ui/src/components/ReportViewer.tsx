@@ -31,6 +31,11 @@ export function ReportViewer() {
     const [viewingNotes, setViewingNotes] = useState<any>(null);
     const [notesData, setNotesData] = useState<any[]>([]);
     const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+    const [editingHireRecord, setEditingHireRecord] = useState<any>(null);
+    const [editHireForm, setEditHireForm] = useState<any>(null);
+    const [viewingHireNotes, setViewingHireNotes] = useState<any>(null);
+    const [hireNotesData, setHireNotesData] = useState<any[]>([]);
+    const [isLoadingHireNotes, setIsLoadingHireNotes] = useState(false);
     const queryClient = useQueryClient();
 
     // Fetch all runs
@@ -215,6 +220,81 @@ export function ReportViewer() {
         }
     };
 
+    // Hire record handlers
+    const handleEditHireRecord = (record: any) => {
+        setEditingHireRecord(record);
+        setEditHireForm({
+            id: record.Id,
+            memberName: record.MemberName,
+            contractorName: record.ContractorName,
+            startDate: record.StartDate,
+            reviewedDate: record.ReviewedDate || new Date().toISOString(),
+            note: '',
+            changedBy: '',
+        });
+    };
+
+    const handleCloseEditHire = () => {
+        setEditingHireRecord(null);
+        setEditHireForm(null);
+    };
+
+    const handleSaveHireEdit = async () => {
+        if (!editingHireRecord || !editHireForm) return;
+        setIsSaving(true);
+        try {
+            // Call the API to update the hire record using the updateReport method
+            await hireDataApi.updateHire(editingHireRecord.Id, {
+                reviewedDate: editHireForm.reviewedDate,
+                note: editHireForm.note,
+                changedBy: editHireForm.changedBy,
+            });
+            setEditingHireRecord(null);
+            setEditHireForm(null);
+            // Refetch the raw hire data
+            queryClient.invalidateQueries({ queryKey: ['rawHireData', selectedRunReviewedDate] });
+        } catch (error) {
+            console.error('Failed to save hire edit:', error);
+            alert('Failed to save changes');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleViewHireNotes = async (record: any) => {
+        console.log('Opening hire notes for:', record);
+        setViewingHireNotes(record);
+        setIsLoadingHireNotes(true);
+        try {
+            const notes = await hireDataApi.getHireNotes(record.Id);
+            console.log('Hire notes loaded:', notes);
+            setHireNotesData(notes);
+        } catch (error) {
+            console.error('Failed to load hire notes:', error);
+            setHireNotesData([]);
+        } finally {
+            setIsLoadingHireNotes(false);
+        }
+    };
+
+    const handleCloseHireNotes = () => {
+        setViewingHireNotes(null);
+        setHireNotesData([]);
+    };
+
+    const formatDateTime = (dateString: string | null | undefined) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Adjust the timezone offset to force toISOString into local time
+        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+
+        // Format and clean up the string structure
+        const localTimestamp = localDate.toISOString()
+            .replace('T', ' ')
+            .replace('Z', '');
+        return localTimestamp;
+    };
+
     const detailColumns: { key: keyof ComplianceReportDetail; label: string; sortable: boolean }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },
         { key: 'contractorId', label: 'Contractor Id', sortable: true },
@@ -228,19 +308,49 @@ export function ReportViewer() {
         { key: 'dispatchNeeded', label: 'Dispatch Needed', sortable: true },
         { key: 'nextHireDispatch', label: 'Next Hire Dispatch', sortable: true },
         { key: 'reviewedDate', label: 'Reviewed Date', sortable: true },
-        { key: 'listPosition', label: 'List Position', sortable: true},
+        { key: 'listPosition', label: 'List Position', sortable: true },
         { key: 'modeName', label: 'Mode', sortable: false },
     ];
-    const rawHiresColumns: { key: keyof HireData; label: string; sortable: boolean }[] = [
+    const rawHiresColumns: { key: keyof HireData; label: string; sortable: boolean; render?: any }[] = [
         { key: 'ContractorName', label: 'Contractor', sortable: true },
-        { key: 'MemberName', label: 'Member Name', sortable: true },
+        {
+            key: 'MemberName', label: 'Member Name', sortable: true,
+        },
         { key: 'IANumber', label: 'IA Number', sortable: true },
         { key: 'HireType', label: 'Hire Type', sortable: true },
         { key: 'StartDate', label: 'Start Date', sortable: true },
         { key: 'EmployerID', label: 'Employer ID', sortable: true },
         { key: 'IsReviewed', label: 'Reviewed', sortable: true },
         { key: 'ReviewedDate', label: 'Reviewed Date', sortable: true },
-        { key: 'ListPosition', label: 'List Position', sortable: true},
+        { key: 'ListPosition', label: 'List Position', sortable: true },
+        {
+            key: 'Id' as any,
+            label: 'Actions',
+            sortable: false,
+            render: (_: any, row: any) => (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="edit-btn"
+                        onClick={() => handleEditHireRecord(row)}
+                        title="Edit record"
+                        aria-label="Edit record"
+                    >
+                        <Edit2 size={16} />
+                    </button>
+                    {row.NoteCount > 0 && (
+
+                        <button
+                            className="note-btn"
+                            onClick={() => handleViewHireNotes(row)}
+                            title="View notes"
+                            aria-label="View notes"
+                        >
+                            📝
+                        </button>
+                    )}
+                </div>
+            )
+        }
     ];
     const reportColumns: { key: keyof ComplianceReport; label: string; sortable: boolean; render?: any }[] = [
         { key: 'employerId', label: 'Employer Id', sortable: true },
@@ -724,6 +834,135 @@ export function ReportViewer() {
                         </div>
                         <div className="modal-footer">
                             <button className="btn-cancel" onClick={handleCloseNotes}>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editingHireRecord && editHireForm && (
+                <div className="modal-overlay" onClick={handleCloseEditHire}>
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Edit Hire Record</h2>
+                            <button
+                                className="modal-close"
+                                onClick={handleCloseEditHire}
+                                aria-label="Close dialog"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Member Name: {editHireForm.memberName}</label>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Contractor Name: {editHireForm.contractorName}</label>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Start Date: {editHireForm.startDate ? new Date(editHireForm.startDate).toLocaleDateString() : '-'}</label>
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="hire-reviewed-date">Reviewed Date (with time)</label>
+                                    <input
+                                        id="hire-reviewed-date"
+                                        type="datetime"
+                                        value={editHireForm.reviewedDate}
+                                        onChange={(e) => setEditHireForm({ ...editHireForm, reviewedDate: e.target.value ? e.target.value : '' })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="hire-note">Note</label>
+                                    <textarea
+                                        id="hire-note"
+                                        value={editHireForm.note}
+                                        onChange={(e) => setEditHireForm({ ...editHireForm, note: e.target.value })}
+                                        rows={3}
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group full-width">
+                                    <label htmlFor="hire-changed-by">Changed By</label>
+                                    <input
+                                        id="hire-changed-by"
+                                        type="text"
+                                        value={editHireForm.changedBy}
+                                        onChange={(e) => setEditHireForm({ ...editHireForm, changedBy: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={handleCloseEditHire} disabled={isSaving}>
+                                Cancel
+                            </button>
+                            <button className="btn-save" onClick={handleSaveHireEdit} disabled={isSaving}>
+                                {isSaving ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {viewingHireNotes && (
+                <div className="modal-overlay" onClick={handleCloseHireNotes} role="dialog" aria-modal="true">
+                    <div className="modal-dialog" onClick={(e) => e.stopPropagation()} role="document" style={{ maxWidth: '700px' }}>
+                        <div className="modal-header">
+                            <h2>Hire Notes - {viewingHireNotes.MemberName} ({viewingHireNotes.ContractorName})</h2>
+                            <button
+                                className="modal-close"
+                                onClick={handleCloseHireNotes}
+                                aria-label="Close dialog"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '0' }}>
+                            {isLoadingHireNotes ? (
+                                <div style={{ textAlign: 'center', padding: '20px' }}>
+                                    <Loader size={32} className="spinning" />
+                                    <p>Loading notes...</p>
+                                </div>
+                            ) : hireNotesData.length > 0 ? (
+                                <DataTable
+                                    columns={[
+                                        {
+                                            key: 'reviewedDate' as any,
+                                            label: 'Reviewed Date',
+                                            sortable: true,
+                                            render: (value: any) => value ? formatDateTime(value) : '-'
+                                        },
+                                        { key: 'note' as any, label: 'Note', sortable: false },
+                                        { key: 'createdBy' as any, label: 'Created By', sortable: true },
+                                        {
+                                            key: 'createdDate' as any,
+                                            label: 'Date',
+                                            sortable: true,
+                                            render: (value: any) => new Date(value).toLocaleDateString()
+                                        },
+                                    ]}
+                                    data={hireNotesData}
+                                    searchableColumns={['note']}
+                                    maxHeight="250px"
+                                />
+                            ) : (
+                                <p className="no-data" style={{ padding: '20px' }}>No notes available</p>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-cancel" onClick={handleCloseHireNotes}>
                                 Close
                             </button>
                         </div>

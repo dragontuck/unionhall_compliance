@@ -72,6 +72,8 @@ export function defineHireDataRoutes(router, controller, uploadMiddleware) {
     router.get('/hire-data', controller.getHireData);
     router.get('/recent-hires/run/:runId', validateParams({ runId: { type: 'integer' } }), controller.getRecentHires);
     router.post('/import/hires', uploadMiddleware.single('file'), controller.importHires);
+    router.put('/hire-data/:id', validateParams({ id: { type: 'integer' } }), controller.updateHireRecord);
+    router.get('/hire-notes/hire/:hireId', validateParams({ hireId: { type: 'integer' } }), controller.getHireNotes);
 }
 
 /**

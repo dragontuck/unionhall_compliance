@@ -18,9 +18,10 @@ export class HireNoteRepository extends MssqlRepository {
     async getNotesByHire(hireId) {
         return this.query(`
             SELECT 
-                note, 
-                CONVERT(nvarchar, createdDate, 25) as createdDate, 
-                createdBy, 
+                n.id,
+                n.note, 
+                CONVERT(nvarchar, n.createdDate, 25) as createdDate, 
+                n.createdBy, 
                 h.MemberName as memberName,
                 n.ReviewedDate as reviewedDate
             FROM CMP_HireNotes n
@@ -39,6 +40,7 @@ export class HireNoteRepository extends MssqlRepository {
     async createNote(noteData) {
         const { hireId, newReviewedDate, note, changedBy } = noteData;
 
+        console.log(`Repo - Creating note for hire record ${hireId} with reviewed date: ${newReviewedDate}, note: ${note}, changedBy: ${changedBy}`);
         return this.execute(`
             INSERT INTO CMP_HireNotes (HireId, ReviewedDate, Note, CreatedBy) 
             VALUES (@hireId, @newReviewedDate, @note, @changedBy)

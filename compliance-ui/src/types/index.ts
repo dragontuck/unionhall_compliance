@@ -73,6 +73,7 @@ export interface HireData {
     ContractorID: number;
     ReviewedDate: string;
     ListPosition: number;
+    NoteCount: number;
 }
 
 export interface Mode {

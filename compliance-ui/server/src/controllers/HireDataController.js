@@ -78,4 +78,37 @@ export class HireDataController {
             errors: result.errors.length > 0 ? result.errors : undefined
         });
     });
+
+    /**
+     * PUT /api/hire-data/:id - Update hire record
+     */
+    updateHireRecord = asyncHandler(async (req, res) => {
+        const hireId = parseInt(req.params.id);
+        if (isNaN(hireId)) {
+            throw AppError.badRequest('Hire ID must be a valid integer');
+        }
+
+        const { reviewedDate, note, changedBy } = req.body;
+
+        const result = await this.hireDataService.updateHire(hireId, {
+            reviewedDate,
+            note,
+            changedBy
+        });
+
+        res.json(result);
+    });
+
+    /**
+     * GET /api/hire-notes/hire/:hireId - Get notes for a specific hire
+     */
+    getHireNotes = asyncHandler(async (req, res) => {
+        const hireId = parseInt(req.params.hireId);
+        if (isNaN(hireId)) {
+            throw AppError.badRequest('Hire ID must be a valid integer');
+        }
+
+        const notes = await this.hireDataService.getHireNotes(hireId);
+        res.json(notes);
+    });
 }

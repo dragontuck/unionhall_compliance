@@ -82,6 +82,12 @@ export interface IReportNotesAPI {
  */
 export interface IHireDataAPI {
     getRawHireData(reviewedDate?: string): Promise<HireData[]>;
+    updateHire(hireId: number, updateData: {
+        reviewedDate?: string;
+        note?: string;
+        changedBy?: string;
+    }): Promise<any>;
+    getHireNotes(hireId: number): Promise<any[]>;
 }
 
 /**
